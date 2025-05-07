@@ -41,15 +41,41 @@
 = Introduction
 Monitoring biodiversity is a growing priority in the context of climate change and human-driven land transformation. In this challenge, we focus on detecting *Neobuxbaumia tetetzo*, a columnar cactus species, in 32×32 aerial images using machine learning. The dataset was derived from the VIGIA project in Mexico.
 
-= Dataset and Preprocessing
-The dataset consists of 17,500 labeled 32×32 RGB images in the `train/` folder, and a set of unlabeled test images. Each image is associated with a binary label (`has_cactus = 0` or `1`).
+= Dataset
+The data set provided is divided into two main parts:
+- *Train/ folder*: contains *17,500* 32x32 pixel RGB images, each associated with a label (class 0 or 1). This subset was used for training, validation and evaluation of the models developed.
 
-The data was split into:
-- 80% training
-- 10% validation
-- 10% test (manual hold-out)
+- *Test/ folder*: includes *4,000* 32x32 RGB images of the same size, without labels. This set has been used exclusively to perform inference with the selected final model, in order to produce predictions to be submitted to the Kaggle platform.
 
-Images were normalized and resized if necessary. For CNN-based models, we applied data augmentation (horizontal/vertical flip, rotation).
+The distribution of classes within the training set was unbalanced:
+- *Class 1* (cactus presence): 13.136 images
+- *Class 0* (no cactus): 4,364 images
+
+#figure(
+  image("img\distribution.png", width: 80%),
+  caption: [
+    Initial class distribution.
+  ],
+)
+
+= Preprocessing
+The preprocessing involved first converting the images from PIL to PyTorch tensors and resizing them to a fixed resolution of 32x32 pixels, consistent with the format of the original images.
+
+To address the obvious class imbalance (about 13,000 images for class 1 and only 4,000 for class 0), a data augmentation strategy was applied targeting only minority class images. Small Random Rotation ( 10°) were applied, and then resized to 32x32 pixels, generating about 4,000 new synthetic images of class 0, bringing the total to ~8,000 images for this class. This has significantly reduced the difference between the two classes, improving the ability of the models to generalize.
+
+The original and augmented images were then linked into a single dataset, which was used for the training phase. Subsequently, the entire dataset was divided according to a stratified strategy (maintaining the proportion of classes in each subdivision) into three distinct subsets:
+- *Training set*: 70%
+- *Validation set*: 15%
+- *Test set*: 15%
+
+This balanced subdivision was crucial for reliable model tuning and an unbiased evaluation of the final performance.
+
+#figure(
+  image("img\distribution_after.png", width: 80%),
+  caption: [
+    Initial class distribution aftet data augmentation on Class 0.
+  ],
+)
 
 = Models Evaluated
 
