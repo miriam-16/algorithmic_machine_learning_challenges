@@ -43,13 +43,13 @@ Monitoring biodiversity is a growing priority in the context of climate change a
 
 = Dataset
 The data set provided is divided into two main parts:
-- *Train/ folder*: contains *17,500* 32x32 pixel RGB images, each associated with a label (class 0 or 1). This subset was used for training, validation and evaluation of the models developed.
+- *Train/ folder*: contains *17500* 32x32 pixel RGB images, each associated with a label (class 0 or 1). This subset was used for training, validation and evaluation of the models developed.
 
-- *Test/ folder*: includes *4,000* 32x32 RGB images of the same size, without labels. This set has been used exclusively to perform inference with the selected final model, in order to produce predictions to be submitted to the Kaggle platform.
+- *Test/ folder*: includes *4000* 32x32 RGB images of the same size, without labels. This set has been used exclusively to perform inference with the selected final model, in order to produce predictions to be submitted to the Kaggle platform.
 
 The distribution of classes within the training set was unbalanced:
-- *Class 1* (cactus presence): 13.136 images
-- *Class 0* (no cactus): 4,364 images
+- *Class 1* (cactus presence): 13136 images
+- *Class 0* (no cactus): 4364 images
 
 #figure(
   image("img/distribution.png", width: 80%),
@@ -64,7 +64,7 @@ The distribution of classes within the training set was unbalanced:
 The preprocessing involved first converting the images from PIL to PyTorch tensors and resizing them to a fixed resolution of 32x32 pixels, consistent with the format of the original images.
 
 == Data augmentation
-To address the obvious class imbalance (about 13,000 images for class 1 and only 4,000 for class 0), a data augmentation strategy was applied targeting only minority class images. Small Random Rotation ( 10°) were applied, and then resized to 32x32 pixels, generating about 4,000 new synthetic images of class 0, bringing the total to ~8,000 images for this class. This has significantly reduced the difference between the two classes, improving the ability of the models to generalize.
+To address the obvious class imbalance (about 13000 images for class 1 and only 4000 for class 0), a data augmentation strategy was applied targeting only minority class images. Small Random Rotation ( 10°) were applied, and then resized to 32x32 pixels, generating about 4000 new synthetic images of class 0, bringing the total to ~8000 images for this class. This has significantly reduced the difference between the two classes, improving the ability of the models to generalize.
 
 == Data splitting
 The original and augmented images were then linked into a single dataset, which was used for the training phase. Subsequently, the entire dataset was divided according to a stratified strategy (maintaining the proportion of classes in each subdivision) into three distinct subsets:
@@ -77,7 +77,7 @@ This balanced subdivision was crucial for reliable model tuning and an unbiased 
 #figure(
   image("img/distribution_after.png", width: 80%),
   caption: [
-    Initial class distribution aftet data augmentation on Class 0.
+    Initial class distribution after data augmentation on Class 0.
   ],
 )
 
@@ -225,7 +225,7 @@ The best-performing SVM model was evaluated on the test set. The performance bre
   ],
 )
 
-The overall test accuracy was 96.5%, with a weighted F1 score of 0.9654. The SVM showed higher recall for the cactus class (class 1), and moderately improved recall on the minority class (class 0) compared to logistic regression. This confirms the model’s ability to capture non-linear decision boundaries through the RBF kernel, although it still struggled with some overlap in feature space.
+The overall test accuracy was 95.8%, with a weighted F1 score of 0.9582. The SVM showed higher recall for the cactus class (class 1), and moderately improved recall on the minority class (class 0) compared to logistic regression. This confirms the model’s ability to capture non-linear decision boundaries through the RBF kernel, although it still struggled with some overlap in feature space.
 
 == Detailed Results – Convolutional Neural Network
 
@@ -238,7 +238,7 @@ The best CNN model was evaluated on the held-out test set. The performance resul
   ],
 )
 
-The final test accuracy was 99.3%, with a weighted average F1 score of 0.9944. The CNN outperformed both logistic regression and SVM by a wide margin, particularly in identifying minority class (class 0) samples, thanks to its ability to learn local spatial features and generalize well from augmented examples.
+The final test accuracy was 99.0%, with a weighted average F1 score of 0.9896. The CNN outperformed both logistic regression and SVM by a wide margin, particularly in identifying minority class (class 0) samples, thanks to its ability to learn local spatial features and generalize well from augmented examples.
 
 == Detailed Results – ResNet18
 
@@ -250,12 +250,12 @@ The fine-tuned ResNet18 model achieved the best performance on the test set. Bel
     columns: (auto, auto, auto, auto, auto),
     align: (left, center, center, center, center),
     table.header[Class][Precision][Recall][F1-score][Support],
-    [0 (no cactus)], [97,23%], [99,24%], [98,22%], [1309],
-    [1 (cactus)], [99,49%], [98,12%], [98,80%], [1971],
+    [0 (no cactus)], [97.23%], [99.24%], [98.22%], [1309],
+    [1 (cactus)], [99.49%], [98.12%], [98.80%], [1971],
   ),
 )
 
-ResNet18 reached a final test accuracy of `98.6%`, with a weighted F1 score of `0.9857`. It demonstrated excellent generalization and balance between precision and recall across both classes, validating the power of transfer learning even in low-resolution, small-format image classification tasks.
+ResNet18 reached a final test accuracy of `98.6%`, with a weighted F1 score of `0.9857`. It demonstrated excellent generalization and balance between precision and recall across both classes, validating the power of transfer learning even in low-resolution, small-format image classification tasks. 
 
 // todo: do we have to keep it?
 #figure(
@@ -264,10 +264,10 @@ ResNet18 reached a final test accuracy of `98.6%`, with a weighted F1 score of `
     columns: (auto, auto, auto),
     align: (left, center, center),
     table.header[Model][F1 Score][Accuracy],
-    [Logistic Regression], [0.8098], [83.4%],
-    [SVM], [0.8571], [86.2%],
-    [CNN], [0.9554], [96.0%],
-    [ResNet18], [0.9776], [98.0%],
+    [Logistic Regression], [0.8098], [81.01%],
+    [SVM], [0.9582], [95.82%],
+    [CNN], [0.9896], [98.96%],
+    [ResNet18], [0.9857], [98.57%],
   ),
 ) <tab:results>
 
