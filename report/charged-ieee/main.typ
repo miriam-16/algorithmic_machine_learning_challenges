@@ -39,35 +39,67 @@
 )
 
 = Introduction
-Recognizing flora from aerial imagery plays a key role in conservation and ecological monitoring. The VIGIA project aims to automate surveillance of protected areas in Mexico, starting with detecting *Neobuxbaumia tetetzo* cacti from aerial photographs. In this challenge, we develop machine learning models to distinguish between image patches that do and do not contain a cactus.
+Monitoring biodiversity is a growing priority in the context of climate change and human-driven land transformation. In this challenge, we focus on detecting *Neobuxbaumia tetetzo*, a columnar cactus species, in 32×32 aerial images using machine learning. The dataset was derived from the VIGIA project in Mexico.
 
-The dataset consists of labeled 32×32 pixel RGB images, and the task is formulated as a binary classification problem. We explored several algorithms: Logistic Regression, Support Vector Machines (SVM), a custom Convolutional Neural Network (CNN), and a pretrained ResNet model. All models are trained on a split of the original dataset, with a portion held out for validation and testing. We are currently finalizing the training and evaluation stages, and will report the best-performing model on the test set.
+= Dataset and Preprocessing
+The dataset consists of 17,500 labeled 32×32 RGB images in the `train/` folder, and a set of unlabeled test images. Each image is associated with a binary label (`has_cactus = 0` or `1`).
 
-= Dataset Analysis and Preprocessing
-The training set consists of 17,500 labeled images (balanced across classes), provided in the `train/` directory, with labels in `train.csv`. Each image corresponds to a 32×32 RGB aerial photo.
+The data was split into:
+- 80% training
+- 10% validation
+- 10% test (manual hold-out)
 
-We began by loading and analyzing the dataset:
-- The dataset appears relatively balanced: both classes (cactus / no cactus) are comparably represented.
-- Images were normalized (pixel values scaled to [0,1]).
-- A validation split of 20% was created from the training set to evaluate generalization.
-- Data augmentation (random flips, rotations) was applied for training CNN-based models to increase robustness.
+Images were normalized and resized if necessary. For CNN-based models, we applied data augmentation (horizontal/vertical flip, rotation).
 
-= Models Trained
+= Models Evaluated
 
 == Logistic Regression
-A simple baseline model using pixel intensities as flattened input features. As expected, the performance is modest due to the model’s linear nature and lack of spatial context.
+Baseline model using flattened pixel values. Its performance is limited due to the absence of spatial pattern learning.
+
+- *F1 Score*: `0.8098`
+- *Accuracy*: `83.4%`
 
 == Support Vector Machine
-An SVM with RBF kernel was used after flattening and scaling the input images. It performed slightly better than logistic regression but is limited by computational cost and lack of convolutional context.
+SVM with RBF kernel and grid search on hyperparameters (C, gamma). Performed better than logistic regression, but with higher computation time.
+
+- *F1 Score*: `0.8571`
+- *Accuracy*: `86.2%`
 
 == Convolutional Neural Network (CNN)
-We implemented a custom CNN composed of multiple convolutional layers followed by max-pooling and dense layers. The model achieved promising accuracy on the validation set thanks to its ability to learn spatial patterns specific to the cactus shapes and textures.
+Custom CNN with two convolutional layers, batch normalization, ReLU, and dropout. Trained for 10 epochs with data augmentation.
 
-== ResNet (Pretrained)
-We employed a transfer learning approach using a ResNet model pretrained on ImageNet. The architecture was modified to accept 32×32 images, and only the final layers were fine-tuned. This model has shown strong preliminary results.
+- *F1 Score*: `0.9554`
+- *Accuracy*: `96.0%`
 
-= Next Steps
-At the time of writing, the training of all models is nearly complete. Once finished, we will compare their validation accuracies and use the best-performing model to predict labels on the test dataset. These predictions will then be reported and analyzed.
+== ResNet18
+Transfer learning with PyTorch’s ResNet18 pretrained on ImageNet. Only the final layer was fine-tuned.
+
+- *F1 Score*: `0.9776`
+- *Accuracy*: `98.0%`
+
+= Metric Justification
+Since the dataset is slightly imbalanced, we adopted *F1 score* as the primary evaluation metric. It balances precision and recall, which is crucial in ecological monitoring where false negatives (missed cacti) may have high cost.
+
+= Results Summary
+
+#figure(
+  caption: [Performance Comparison of Models on the Validation Set],
+  placement: top,
+  table(
+    columns: (auto, auto, auto),
+    align: (left, center, center),
+    table.header[Model][F1 Score][Accuracy],
+    [Logistic Regression], [0.8098], [83.4%],
+    [SVM], [0.8571], [86.2%],
+    [CNN], [0.9554], [96.0%],
+    [ResNet18], [0.9776], [98.0%],
+  )
+) <tab:results>
+
+= Conclusion and Next Steps
+Among the four models tested, *ResNet18* demonstrated the best performance in both accuracy and F1 score. It was therefore selected to generate predictions on the unlabeled test set. In future work, further improvement could involve model ensembling or unsupervised pretraining on aerial imagery.
 
 = References
-This section will include all references used, once the analysis is finalized and citations are added.
+This report is inspired by the VIGIA project as described in:
+
+Efren López-Jiménez et al., *Columnar Cactus Recognition in Aerial Images using a Deep Learning Approach*, Ecological Informatics, 2019.
