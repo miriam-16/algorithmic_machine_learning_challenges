@@ -11,28 +11,28 @@
       department: [Student],
       organization: [EURECOM],
       location: [Biot, France],
-      email: "alex.argese@eurecom.fr"
+      email: "alex.argese@eurecom.fr",
     ),
     (
       name: "Cristian Degni",
       department: [Student],
       organization: [EURECOM],
       location: [Biot, France],
-      email: "cristian.degni@eurecom.fr"
+      email: "cristian.degni@eurecom.fr",
     ),
     (
       name: "Miriam Lamari",
       department: [Student],
       organization: [EURECOM],
       location: [Biot, France],
-      email: "miriam.lamari@eurecom.fr"
+      email: "miriam.lamari@eurecom.fr",
     ),
     (
       name: "Enrico Sbuttoni",
       department: [Student],
       organization: [EURECOM],
       location: [Biot, France],
-      email: "enrico.sbuttoni@eurecom.fr"
+      email: "enrico.sbuttoni@eurecom.fr",
     ),
   ),
   index-terms: ("Machine Learning", "Cactus Detection", "Aerial Imagery", "CNN", "ResNet"),
@@ -96,14 +96,16 @@ To improve performance and stability, we conducted a small grid search on key hy
     inset: 8pt,
     align: (left, left, center),
     table.header(
-      [Hyperparameter], [Ranges], [Best Parameter],
+      [Hyperparameter],
+      [Ranges],
+      [Best Parameter],
     ),
 
     [C], [0.1, 1, 10], [10],
     [solver], [lbfgs], [lbfgs],
     [penalty], [l2], [l2],
     [max_iter], [1500, 3000], [1500],
-  )
+  ),
 ) <tab:lr-hyperparams>
 
 While the model is limited by its inability to learn spatial features, it remains a valuable baseline that performs surprisingly well in this context, particularly when combined with proper preprocessing and class balancing.
@@ -122,13 +124,15 @@ We performed a grid search on key hyperparameters using 5-fold cross-validation 
     inset: 8pt,
     align: (left, left, center),
     table.header(
-      [Hyperparameter], [Ranges], [Best Parameter],
+      [Hyperparameter],
+      [Ranges],
+      [Best Parameter],
     ),
 
     [C], [0.1, 1, 10], [10],
     [kernels], ['rbf', 'sigmoid', 'poly'], [rbf],
     [gammas], ['scale', 'auto'], [scale],
-  )
+  ),
 ) <tab:svm-hyperparams>
 
 The optimal configuration consisted of an RBF kernel with `C=10` and `gamma='scale'`. Although computationally more expensive than logistic regression, SVM provided improved generalization capabilities by modeling non-linear boundaries in the data space.
@@ -149,14 +153,16 @@ We performed a grid search on four key hyperparameters to fine-tune the model:
     inset: 8pt,
     align: (left, left, center),
     table.header(
-      [Hyperparameter], [Ranges], [Best Parameter],
+      [Hyperparameter],
+      [Ranges],
+      [Best Parameter],
     ),
 
     [learning rate], [0.001, 0.005, 0.01], [0.001],
     [drop_out], [0.25, 0.4, 0.5], [0.25],
     [initial_filters], [8, 16, 32], [32],
     [fc layers], [64, 100, 128], [64],
-  )
+  ),
 ) <tab:cnn-hyperparams>
 
 The model was trained for 10 epochs using the Adam optimizer and binary cross-entropy loss. Data augmentation included random horizontal/vertical flips and slight rotations, applied on the fly during training. Thanks to this setup, the CNN was able to learn meaningful spatial patterns, achieving substantial improvements over non-convolutional models.
@@ -177,12 +183,14 @@ A small grid search was conducted to tune the learning rate and optimizer:
     inset: 8pt,
     align: (left, left, center),
     table.header(
-      [Hyperparameter], [Ranges], [Best Parameter],
+      [Hyperparameter],
+      [Ranges],
+      [Best Parameter],
     ),
 
     [learning rate], [0.001, 0.0001], [0.001],
     [optimizer], ['adam', 'sgd'], ['adam'],
-  )
+  ),
 ) <tab:resnet-hyperparams>
 
 The model was trained using binary cross-entropy loss and the Adam optimizer. We applied moderate data augmentation (horizontal/vertical flips and rotations) and early stopping to avoid overfitting. The results demonstrated superior performance compared to all other models evaluated.
@@ -242,13 +250,14 @@ The fine-tuned ResNet18 model achieved the best performance on the test set. Bel
     columns: (auto, auto, auto, auto, auto),
     align: (left, center, center, center, center),
     table.header[Class][Precision][Recall][F1-score][Support],
-    [0 (no cactus)], [0.97], [0.96], [0.96], [1309],
-    [1 (cactus)], [0.98], [0.99], [0.98], [1971],
-  )
+    [0 (no cactus)], [97,23%], [99,24%], [98,22%], [1309],
+    [1 (cactus)], [99,49%], [98,12%], [98,80%], [1971],
+  ),
 )
 
-ResNet18 reached a final test accuracy of `98.0%`, with a weighted F1 score of `0.9776`. It demonstrated excellent generalization and balance between precision and recall across both classes, validating the power of transfer learning even in low-resolution, small-format image classification tasks.
+ResNet18 reached a final test accuracy of `98.6%`, with a weighted F1 score of `0.9857`. It demonstrated excellent generalization and balance between precision and recall across both classes, validating the power of transfer learning even in low-resolution, small-format image classification tasks.
 
+// todo: do we have to keep it?
 #figure(
   caption: [Performance Comparison of Models on the Validation Set],
   table(
@@ -259,7 +268,7 @@ ResNet18 reached a final test accuracy of `98.0%`, with a weighted F1 score of `
     [SVM], [0.8571], [86.2%],
     [CNN], [0.9554], [96.0%],
     [ResNet18], [0.9776], [98.0%],
-  )
+  ),
 ) <tab:results>
 
 = Conclusion and Next Steps
