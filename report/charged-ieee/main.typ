@@ -59,10 +59,14 @@ The distribution of classes within the training set was unbalanced:
 )
 
 = Preprocessing
+
+== Tensor transformation
 The preprocessing involved first converting the images from PIL to PyTorch tensors and resizing them to a fixed resolution of 32x32 pixels, consistent with the format of the original images.
 
+== Data augmentation
 To address the obvious class imbalance (about 13,000 images for class 1 and only 4,000 for class 0), a data augmentation strategy was applied targeting only minority class images. Small Random Rotation ( 10°) were applied, and then resized to 32x32 pixels, generating about 4,000 new synthetic images of class 0, bringing the total to ~8,000 images for this class. This has significantly reduced the difference between the two classes, improving the ability of the models to generalize.
 
+== Data splitting
 The original and augmented images were then linked into a single dataset, which was used for the training phase. Subsequently, the entire dataset was divided according to a stratified strategy (maintaining the proportion of classes in each subdivision) into three distinct subsets:
 - *Training set*: 70%
 - *Validation set*: 15%
@@ -107,6 +111,23 @@ Transfer learning with PyTorch’s ResNet18 pretrained on ImageNet. Only the fin
 Since the dataset is slightly imbalanced, we adopted *F1 score* as the primary evaluation metric. It balances precision and recall, which is crucial in ecological monitoring where false negatives (missed cacti) may have high cost.
 
 = Results Summary
+
+#figure(
+  caption: [Hyperparameter tuning for general ResNet18],
+  placement: top,
+  table(
+    columns: (auto, auto, auto),
+    inset: 8pt,
+    align: (left, left, center),
+    table.header(
+      [*Hyperparameter*], [*Ranges*], [*Best Parameter*],
+    ),
+
+    [learning rate], [0.001, 0.0001], [0.001],
+    [optimizer], ['adam', 'sgd'], ['adam'],
+
+  )
+) <tab:results>
 
 #figure(
   caption: [Performance Comparison of Models on the Validation Set],
