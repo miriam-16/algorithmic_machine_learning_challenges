@@ -198,51 +198,39 @@ Since the dataset is slightly imbalanced, we adopted *F1 score* as the primary e
 The best logistic regression model, trained with the selected hyperparameters, was evaluated on the held-out test set. The table below summarizes the classification performance per class:
 
 #figure(
-  caption: [Classification Report on the Test Set (Logistic Regression)],
-  table(
-    columns: (auto, auto, auto, auto, auto),
-    align: (left, center, center, center, center),
-    table.header[Class][Precision][Recall][F1-score][Support],
-    [0 (no cactus)], [0.96], [0.55], [0.70], [1309],
-    [1 (cactus)], [0.77], [0.99], [0.86], [1971],
-  )
+  image("img/lr_results.png", width: 90%),
+  caption: [
+    Metrics for Logistic Regression
+  ],
 )
 
-The model achieved a final test accuracy of `81.01%`. It showed very high precision for class 0 (no cactus), but the relatively low recall (`0.55`) indicates many false positives. For class 1 (cactus), the model achieved strong performance across all metrics, reflecting its bias toward the majority class. This suggests that while the logistic regression model benefits from the augmentation strategy, it still struggles with class imbalance and spatial nuances.
+The model achieved a final test accuracy of 81.01%. It showed very high precision for class 0 (no cactus), but the relatively low recall (0.55) indicates many false negatives. For class 1 (cactus), the model achieved strong performance across all metrics, reflecting its bias toward the majority class. This suggests that while the logistic regression model benefits from the augmentation strategy, it still struggles with class imbalance and lacks the capacity to model complex spatial patterns.
 
 == Detailed Results – Support Vector Machine
 
 The best-performing SVM model was evaluated on the test set. The performance breakdown per class is shown below:
 
 #figure(
-  caption: [Classification Report on the Test Set (SVM)],
-  table(
-    columns: (auto, auto, auto, auto, auto),
-    align: (left, center, center, center, center),
-    table.header[Class][Precision][Recall][F1-score][Support],
-    [0 (no cactus)], [0.93], [0.64], [0.76], [1309],
-    [1 (cactus)], [0.82], [0.98], [0.89], [1971],
-  )
+  image("img/svm_results.png", width: 90%),
+  caption: [
+    Metrics for SVM
+  ],
 )
 
-The overall test accuracy was `86.16%`, with a weighted F1 score of `0.86`. The SVM showed higher recall for the cactus class (class 1), and moderately improved recall on the minority class (class 0) compared to logistic regression, though still suboptimal. This confirms the model’s ability to handle some non-linearities in the data, but also highlights its limitations in separating overlapping classes based on raw pixel values alone.
+The overall test accuracy was 96.5%, with a weighted F1 score of 0.9654. The SVM showed higher recall for the cactus class (class 1), and moderately improved recall on the minority class (class 0) compared to logistic regression. This confirms the model’s ability to capture non-linear decision boundaries through the RBF kernel, although it still struggled with some overlap in feature space.
 
 == Detailed Results – Convolutional Neural Network
 
 The best CNN model was evaluated on the held-out test set. The performance results per class are as follows:
 
 #figure(
-  caption: [Classification Report on the Test Set (CNN)],
-  table(
-    columns: (auto, auto, auto, auto, auto),
-    align: (left, center, center, center, center),
-    table.header[Class][Precision][Recall][F1-score][Support],
-    [0 (no cactus)], [0.95], [0.91], [0.93], [1309],
-    [1 (cactus)], [0.96], [0.98], [0.97], [1971],
-  )
+  image("img/cnn_results.png", width: 90%),
+  caption: [
+    Metrics for SVM
+  ],
 )
 
-The final test accuracy was `96.0%`, with a weighted average F1 score of `0.9554`. The CNN outperformed both logistic regression and SVM by a wide margin, particularly in identifying minority class (class 0) samples, thanks to its ability to learn local spatial features and generalize well from augmented examples.
+The final test accuracy was 99.3%, with a weighted average F1 score of 0.9944. The CNN outperformed both logistic regression and SVM by a wide margin, particularly in identifying minority class (class 0) samples, thanks to its ability to learn local spatial features and generalize well from augmented examples.
 
 == Detailed Results – ResNet18
 
@@ -260,24 +248,6 @@ The fine-tuned ResNet18 model achieved the best performance on the test set. Bel
 )
 
 ResNet18 reached a final test accuracy of `98.0%`, with a weighted F1 score of `0.9776`. It demonstrated excellent generalization and balance between precision and recall across both classes, validating the power of transfer learning even in low-resolution, small-format image classification tasks.
-
-
-#figure(
-  caption: [Hyperparameter tuning for general ResNet18],
-  placement: top,
-  table(
-    columns: (auto, auto, auto),
-    inset: 8pt,
-    align: (left, left, center),
-    table.header(
-      [*Hyperparameter*], [*Ranges*], [*Best Parameter*],
-    ),
-
-    [learning rate], [0.001, 0.0001], [0.001],
-    [optimizer], ['adam', 'sgd'], ['adam'],
-
-  )
-) <tab:results>
 
 #figure(
   caption: [Performance Comparison of Models on the Validation Set],
