@@ -52,7 +52,7 @@ The distribution of classes within the training set was unbalanced:
 - *Class 0* (no cactus): 4,364 images
 
 #figure(
-  image("img\distribution.png", width: 80%),
+  image("img/distribution.png", width: 80%),
   caption: [
     Initial class distribution.
   ],
@@ -71,7 +71,7 @@ The original and augmented images were then linked into a single dataset, which 
 This balanced subdivision was crucial for reliable model tuning and an unbiased evaluation of the final performance.
 
 #figure(
-  image("img\distribution_after.png", width: 80%),
+  image("img/distribution_after.png", width: 80%),
   caption: [
     Initial class distribution aftet data augmentation on Class 0.
   ],
@@ -80,37 +80,186 @@ This balanced subdivision was crucial for reliable model tuning and an unbiased 
 = Models Evaluated
 
 == Logistic Regression
-Baseline model using flattened pixel values. Its performance is limited due to the absence of spatial pattern learning.
 
-- *F1 Score*: `0.8098`
-- *Accuracy*: `83.4%`
+Logistic Regression was used as a baseline model due to its simplicity and interpretability. The model was implemented using the `scikit-learn` library. Since this algorithm does not exploit spatial structure in images, each 32×32 RGB image was flattened into a 3072-dimensional vector.
+
+To improve performance and stability, we conducted a small grid search on key hyperparameters, tuning the regularization strength (`C`), the solver, and the maximum number of iterations. The tuning process was performed via 5-fold cross-validation on the training set using F1 score as the evaluation metric.
+
+#figure(
+  caption: [Hyperparameter tuning for Logistic Regression],
+  table(
+    columns: (auto, auto, auto),
+    inset: 8pt,
+    align: (left, left, center),
+    table.header(
+      [Hyperparameter], [Ranges], [Best Parameter],
+    ),
+
+    [C], [0.1, 1, 10], [10],
+    [solver], [lbfgs], [lbfgs],
+    [penalty], [l2], [l2],
+    [max_iter], [1500, 3000], [1500],
+  )
+) <tab:lr-hyperparams>
+
+While the model is limited by its inability to learn spatial features, it remains a valuable baseline that performs surprisingly well in this context, particularly when combined with proper preprocessing and class balancing.
+
 
 == Support Vector Machine
-SVM with RBF kernel and grid search on hyperparameters (C, gamma). Performed better than logistic regression, but with higher computation time.
 
-- *F1 Score*: `0.8571`
-- *Accuracy*: `86.2%`
+Support Vector Machines (SVM) are well-suited for binary classification tasks with high-dimensional input spaces. In our setup, the images were first flattened into 3072-dimensional vectors and then standardized using z-score normalization.
+
+We performed a grid search on key hyperparameters using 5-fold cross-validation to optimize model performance. The tested hyperparameters included different kernel types (`rbf`, `sigmoid`, `poly`), values for regularization parameter `C`, and kernel coefficient `gamma`.
+
+#figure(
+  caption: [Hyperparameter tuning for SVM],
+  table(
+    columns: (auto, auto, auto),
+    inset: 8pt,
+    align: (left, left, center),
+    table.header(
+      [Hyperparameter], [Ranges], [Best Parameter],
+    ),
+
+    [C], [0.1, 1, 10], [10],
+    [kernels], ['rbf', 'sigmoid', 'poly'], [rbf],
+    [gammas], ['scale', 'auto'], [scale],
+  )
+) <tab:svm-hyperparams>
+
+The optimal configuration consisted of an RBF kernel with `C=10` and `gamma='scale'`. Although computationally more expensive than logistic regression, SVM provided improved generalization capabilities by modeling non-linear boundaries in the data space.
+
 
 == Convolutional Neural Network (CNN)
-Custom CNN with two convolutional layers, batch normalization, ReLU, and dropout. Trained for 10 epochs with data augmentation.
 
-- *F1 Score*: `0.9554`
-- *Accuracy*: `96.0%`
+To better capture spatial structures in the images, we implemented a custom Convolutional Neural Network (CNN) using PyTorch. The architecture was designed with simplicity in mind to ensure interpretability and fast training, yet flexible enough to benefit from data augmentation.
+
+The model consists of two convolutional layers followed by max-pooling, batch normalization, ReLU activation, and dropout. The final layers are fully connected with a sigmoid output unit for binary classification.
+
+We performed a grid search on four key hyperparameters to fine-tune the model:
+
+#figure(
+  caption: [Hyperparameter tuning for general CNN],
+  table(
+    columns: (auto, auto, auto),
+    inset: 8pt,
+    align: (left, left, center),
+    table.header(
+      [Hyperparameter], [Ranges], [Best Parameter],
+    ),
+
+    [learning rate], [0.001, 0.005, 0.01], [0.001],
+    [drop_out], [0.25, 0.4, 0.5], [0.25],
+    [initial_filters], [8, 16, 32], [32],
+    [fc layers], [64, 100, 128], [64],
+  )
+) <tab:cnn-hyperparams>
+
+The model was trained for 10 epochs using the Adam optimizer and binary cross-entropy loss. Data augmentation included random horizontal/vertical flips and slight rotations, applied on the fly during training. Thanks to this setup, the CNN was able to learn meaningful spatial patterns, achieving substantial improvements over non-convolutional models.
+
 
 == ResNet18
-Transfer learning with PyTorch’s ResNet18 pretrained on ImageNet. Only the final layer was fine-tuned.
 
-- *F1 Score*: `0.9776`
-- *Accuracy*: `98.0%`
+To leverage deep feature representations learned from large-scale image datasets, we adopted a transfer learning approach using PyTorch’s pretrained ResNet18 model. The model, originally trained on ImageNet, was adapted to our binary classification task by replacing the final fully connected layer with a custom head: a single neuron followed by a sigmoid activation function.
+
+We froze the pretrained layers and fine-tuned only the final block and classification head. Images were resized to 224×224 to match the input size expected by ResNet18.
+
+A small grid search was conducted to tune the learning rate and optimizer:
+
+#figure(
+  caption: [Hyperparameter tuning for general ResNet18],
+  table(
+    columns: (auto, auto, auto),
+    inset: 8pt,
+    align: (left, left, center),
+    table.header(
+      [Hyperparameter], [Ranges], [Best Parameter],
+    ),
+
+    [learning rate], [0.001, 0.0001], [0.001],
+    [optimizer], ['adam', 'sgd'], ['adam'],
+  )
+) <tab:resnet-hyperparams>
+
+The model was trained using binary cross-entropy loss and the Adam optimizer. We applied moderate data augmentation (horizontal/vertical flips and rotations) and early stopping to avoid overfitting. The results demonstrated superior performance compared to all other models evaluated.
+
 
 = Metric Justification
 Since the dataset is slightly imbalanced, we adopted *F1 score* as the primary evaluation metric. It balances precision and recall, which is crucial in ecological monitoring where false negatives (missed cacti) may have high cost.
 
 = Results Summary
 
+== Detailed Results – Logistic Regression
+
+The best logistic regression model, trained with the selected hyperparameters, was evaluated on the held-out test set. The table below summarizes the classification performance per class:
+
+#figure(
+  caption: [Classification Report on the Test Set (Logistic Regression)],
+  table(
+    columns: (auto, auto, auto, auto, auto),
+    align: (left, center, center, center, center),
+    table.header[Class][Precision][Recall][F1-score][Support],
+    [0 (no cactus)], [0.96], [0.55], [0.70], [1309],
+    [1 (cactus)], [0.77], [0.99], [0.86], [1971],
+  )
+)
+
+The model achieved a final test accuracy of `81.01%`. It showed very high precision for class 0 (no cactus), but the relatively low recall (`0.55`) indicates many false positives. For class 1 (cactus), the model achieved strong performance across all metrics, reflecting its bias toward the majority class. This suggests that while the logistic regression model benefits from the augmentation strategy, it still struggles with class imbalance and spatial nuances.
+
+== Detailed Results – Support Vector Machine
+
+The best-performing SVM model was evaluated on the test set. The performance breakdown per class is shown below:
+
+#figure(
+  caption: [Classification Report on the Test Set (SVM)],
+  table(
+    columns: (auto, auto, auto, auto, auto),
+    align: (left, center, center, center, center),
+    table.header[Class][Precision][Recall][F1-score][Support],
+    [0 (no cactus)], [0.93], [0.64], [0.76], [1309],
+    [1 (cactus)], [0.82], [0.98], [0.89], [1971],
+  )
+)
+
+The overall test accuracy was `86.16%`, with a weighted F1 score of `0.86`. The SVM showed higher recall for the cactus class (class 1), and moderately improved recall on the minority class (class 0) compared to logistic regression, though still suboptimal. This confirms the model’s ability to handle some non-linearities in the data, but also highlights its limitations in separating overlapping classes based on raw pixel values alone.
+
+== Detailed Results – Convolutional Neural Network
+
+The best CNN model was evaluated on the held-out test set. The performance results per class are as follows:
+
+#figure(
+  caption: [Classification Report on the Test Set (CNN)],
+  table(
+    columns: (auto, auto, auto, auto, auto),
+    align: (left, center, center, center, center),
+    table.header[Class][Precision][Recall][F1-score][Support],
+    [0 (no cactus)], [0.95], [0.91], [0.93], [1309],
+    [1 (cactus)], [0.96], [0.98], [0.97], [1971],
+  )
+)
+
+The final test accuracy was `96.0%`, with a weighted average F1 score of `0.9554`. The CNN outperformed both logistic regression and SVM by a wide margin, particularly in identifying minority class (class 0) samples, thanks to its ability to learn local spatial features and generalize well from augmented examples.
+
+== Detailed Results – ResNet18
+
+The fine-tuned ResNet18 model achieved the best performance on the test set. Below is the detailed classification report:
+
+#figure(
+  caption: [Classification Report on the Test Set (ResNet18)],
+  table(
+    columns: (auto, auto, auto, auto, auto),
+    align: (left, center, center, center, center),
+    table.header[Class][Precision][Recall][F1-score][Support],
+    [0 (no cactus)], [0.97], [0.96], [0.96], [1309],
+    [1 (cactus)], [0.98], [0.99], [0.98], [1971],
+  )
+)
+
+ResNet18 reached a final test accuracy of `98.0%`, with a weighted F1 score of `0.9776`. It demonstrated excellent generalization and balance between precision and recall across both classes, validating the power of transfer learning even in low-resolution, small-format image classification tasks.
+
+
 #figure(
   caption: [Performance Comparison of Models on the Validation Set],
-  placement: top,
   table(
     columns: (auto, auto, auto),
     align: (left, center, center),
@@ -123,7 +272,10 @@ Since the dataset is slightly imbalanced, we adopted *F1 score* as the primary e
 ) <tab:results>
 
 = Conclusion and Next Steps
-Among the four models tested, *ResNet18* demonstrated the best performance in both accuracy and F1 score. It was therefore selected to generate predictions on the unlabeled test set. In future work, further improvement could involve model ensembling or unsupervised pretraining on aerial imagery.
+Despite its simplicity, Logistic Regression achieved a strong baseline performance, demonstrating that even linear models can be effective when supported by appropriate preprocessing and balancing techniques.
+The SVM outperformed logistic regression, especially in terms of class 1 recall, but was still constrained by the lack of spatial awareness in flattened input representations.
+The custom CNN significantly improved classification accuracy and balance across classes, confirming the advantage of convolutional architectures in image-based ecological tasks.
+Among all tested models, ResNet18 stood out with outstanding precision, recall, and F1 scores, confirming the effectiveness of transfer learning even when applied to small aerial images of ecological relevance.
 
 = References
 This report is inspired by the VIGIA project as described in:
