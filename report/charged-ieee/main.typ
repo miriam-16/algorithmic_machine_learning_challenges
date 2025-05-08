@@ -195,7 +195,6 @@ A small grid search was conducted to tune the learning rate and optimizer:
 
 The model was trained using binary cross-entropy loss and the Adam optimizer. We applied moderate data augmentation (horizontal/vertical flips and rotations) and early stopping to avoid overfitting. The results demonstrated superior performance compared to all other models evaluated.
 
-
 = Metric Justification
 Since the dataset is slightly imbalanced, we adopted *F1 score* as the primary evaluation metric. It balances precision and recall, which is crucial in ecological monitoring where false negatives (missed cacti) may have high cost.
 
@@ -270,6 +269,9 @@ ResNet18 reached a final test accuracy of `98.6%`, with a weighted F1 score of `
     [ResNet18], [0.9857], [98.57%],
   ),
 ) <tab:results>
+
+= Model selected
+Although the custom CNN achieved a slightly higher validation F1-score (0.9896) than ResNet18 (0.9857), we selected ResNet18 as the final model due to its superior robustness and generalization capabilities. Its pretrained layers from ImageNet allow it to leverage learned features even on small, low-resolution inputs like our 32×32 aerial images. This makes it more reliable for deployment on unseen data, where the custom CNN might be more prone to overfitting.
 
 = Conclusion and Next Steps
 Despite its simplicity, Logistic Regression achieved a strong baseline performance, demonstrating that even linear models can be effective when supported by appropriate preprocessing and balancing techniques.
