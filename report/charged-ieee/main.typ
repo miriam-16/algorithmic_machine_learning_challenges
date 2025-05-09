@@ -273,6 +273,15 @@ ResNet18 reached a final test accuracy of `98.6%`, with a weighted F1 score of `
 = Model selected
 Although the custom CNN achieved a slightly higher validation F1-score (0.9896) than ResNet18 (0.9857), we selected ResNet18 as the final model due to its superior robustness and generalization capabilities. Its pretrained layers from ImageNet allow it to leverage learned features even on small, low-resolution inputs like our 32×32 aerial images. This makes it more reliable for deployment on unseen data, where the custom CNN might be more prone to overfitting.
 
+= Inference on Unlabeled Test Set
+After model selection, we applied the four best-performing models — Logistic Regression, SVM, CNN, and ResNet18 — to the 4000 unlabeled images from the test set. Each model was used to generate a prediction (0 or 1) for every image, maintaining the order of the images as read by the DataLoader.
+
+To combine these predictions, we employed a weighted majority voting strategy, assigning a normalized weight to each model based on its accuracy on the internal test set. The final class for each image was assigned as 1 (cactus) if the weighted sum of predictions exceeded 0.5, and 0 otherwise.
+
+We opted for weighted majority voting instead of simple majority voting to give greater influence to more accurate models. This choice reflects our aim to prioritize the decisions of models that demonstrated higher reliability during validation and internal test, thus improving the ensemble's overall robustness and predictive power.
+
+Finally, the resulting predictions were saved in a CSV file (ensemble_predictions.csv) with two columns: id (image filename) and label (predicted class).
+
 = Conclusion and Next Steps
 Despite its simplicity, Logistic Regression achieved a strong baseline performance, demonstrating that even linear models can be effective when supported by appropriate preprocessing and balancing techniques.
 The SVM outperformed logistic regression, especially in terms of class 1 recall, but was still constrained by the lack of spatial awareness in flattened input representations.
