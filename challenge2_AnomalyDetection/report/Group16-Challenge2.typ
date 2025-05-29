@@ -122,9 +122,9 @@ The model is trained using *mean squared error (MSE)* as the reconstruction loss
 
 == Convolutional Variational Autoencoder
 
-A *Convolutional Variational Autoencoder (ConvVAE)* was used to learn *low-dimensional embeddings* of *Mel spectrograms* derived from *16kHz audio data*. The model, implemented in *PyTorch*, includes a *convolutional encoder* that projects inputs to a *latent space* of dimension *8*, *16*, or *32*, and a *decoder* that reconstructs the spectrogram from the latent representation. Input spectrograms are *standardized* and *padded* to maintain spatial compatibility throughout the network.
+A *Convolutional Variational Autoencoder (ConvVAE)* was used to model the distribution of *normal Mel spectrograms* extracted from *16kHz audio recordings*. The architecture consists of a *convolutional encoder* that compresses the input into a *latent space* of dimension *8*, *16*, or *32*, and a *decoder* that reconstructs the input from this latent representation. Spectrograms are *standardized* and *zero-padded* to ensure compatibility with the convolutional layers.
 
-The architecture applies the *reparameterization trick* to enable stochastic sampling during training and combines *reconstruction loss* with *KL divergence* using a *β-VAE loss formulation*. The model supports configurable *latent dimensionality* and *β weighting*, allowing tuning of the trade-off between reconstruction accuracy and latent space regularization.
+The model uses the *reparameterization trick* to allow backpropagation through stochastic sampling, and is trained with a *β-VAE loss*, which combines *MSE reconstruction loss* and *KL divergence*. A grid search over *latent dimensions* and *β values* was performed using *5-fold cross-validation* on normal samples to select the best configuration.
 
 #figure(
   caption: [Hyperparameter setup for ConvVAE],
@@ -138,8 +138,8 @@ The architecture applies the *reparameterization trick* to enable stochastic sam
       [Used],
     ),
 
-    [latent_dim], [8, 16, 32], [8],
-    [β], [0.01, 0.1, 1.0], [0.1],
+    [latent_dim], [8, 16, 32], [32],
+    [β], [0.01, 0.1, 1.0], [0.01],
   ),
 ) <tab:vae-hyperparams>
 
@@ -178,14 +178,17 @@ Implemented via the *panns_inference* library, the model is used in *inference m
 
 = Metric Justification
 
-Given the *class imbalance*, we used the *F1 score* as the main metric, as it balances *precision* and *recall* better than accuracy. This is especially important in *ecological monitoring*, where missing a cactus (*false negative*) is more critical than a false detection. F1 was therefore used for both *model selection* and *hyperparameter tuning*.
+To evaluate model performance in ranking anomalies, we primarily used the *ROC AUC*, which measures the model's ability to distinguish between *normal* and *anomalous* samples, independently of a decision threshold. This is particularly important in *unsupervised anomaly detection*, where decision boundaries are not known a priori.
+
+While additional classification metrics such as *F1-score*, *precision*, and *recall* were reported after threshold selection, they were not used for *model selection* or hyperparameter tuning.
+
 
 
 = Results Summary
 
-== Detailed Results – Logistic Regression
+== Detailed Results – *Fully-Connected VAE*
 
-The best *logistic regression* model, trained with the selected *hyperparameters*, was evaluated on the *held-out test set*. The table below summarizes the *classification performance per class*:
+The *fully-connected Variational Autoencoder* (*VAE*) was trained on *normalized tabular representations* of the Mel spectrograms. Despite effective training convergence (with total loss decreasing from over *10,000* to below *1,000*) the final *ROC AUC* was only *0.3975*. This suggests the learned embeddings were *not sufficiently informative* for distinguishing anomalous samples. The poor performance may stem from the VAE's *limited capacity to model temporal and spatial structure* in spectrogram data.
 
 /*
 #figure(
@@ -196,11 +199,9 @@ The best *logistic regression* model, trained with the selected *hyperparameters
 )
 */
 
-The model achieved a final *test accuracy* of *81.01%*. It showed very high *precision* for class 0 (*no cactus*), but the relatively low *recall* (*0.55*) indicates many *false negatives*. For class 1 (*cactus*), the model achieved *strong performance* across all metrics, reflecting its *bias toward the majority class*. This suggests that while the *logistic regression model* benefits from the *augmentation strategy*, it still struggles with *class imbalance* and lacks the capacity to model *complex spatial patterns*.
+== Detailed Results – *Convolutional VAE*
 
-== Detailed Results – Support Vector Machine
-
-The best-performing *SVM* model was evaluated on the *test set*. The performance breakdown per class is shown below:
+The *Convolutional VAE* (*ConvVAE*) was trained directly on *2D Mel spectrograms*, using convolutional layers to better capture *local spatial structure*. A grid search over *latent dimensions* and *β values* identified the optimal setting as `latent_dim=32`, `β=0.01`, yielding a *cross-validated loss* of *33689.0*. Final evaluation on the test set produced a *ROC AUC* of *0.7890*, with an *F1-score* of *0.8575*, *accuracy* of *0.7947*, and *precision* of *0.8662*. These results confirm the model's ability to *accurately reconstruct normal patterns* while effectively distinguishing *anomalous events*.
 
 /*
 #figure(
@@ -211,26 +212,9 @@ The best-performing *SVM* model was evaluated on the *test set*. The performance
 )
 */
 
-The overall *test accuracy* was *95.8%*, with a *weighted F1 score* of *0.9582*. The SVM showed higher *recall* for the *cactus class* (class 1), and moderately improved *recall* on the *minority class* (class 0) compared to *logistic regression*. This confirms the model’s ability to capture *non-linear decision boundaries* through the *RBF kernel*, although it still struggled with some *overlap in feature space*.
+== Detailed Results – *PANNs Embedding + Mahalanobis Distance*
 
-== Detailed Results – Convolutional Neural Network
-
-The best *CNN* model was evaluated on the *held-out test set*. The performance results per class are as follows:
-
-/*
-#figure(
-  image("img/cnn_results.png", width: 85%),
-  caption: [
-    Metrics for SVM
-  ],
-)
-*/
-
-The final *test accuracy* was *99.0%*, with a *weighted average F1 score* of *0.9896*. The *CNN* outperformed both *logistic regression* and *SVM* by a wide margin, particularly in identifying *minority class* (class 0) samples, thanks to its ability to learn *local spatial features* and *generalize well* from *augmented examples*.
-
-== Detailed Results – ResNet18
-
-The *fine-tuned ResNet18* model achieved the *best performance* on the *test set*. Below is the detailed *classification report*:
+The *PANNs-based model* used a *pretrained Cnn14 architecture* to extract *2048-dimensional embeddings* from raw waveforms. An anomaly score was computed using the *Mahalanobis distance* from the mean of normal embeddings. This method achieved the best overall result, with a *ROC AUC* of *0.9311*, significantly outperforming the reconstruction-based approaches. The strong performance confirms the effectiveness of *pretrained audio representations* for capturing *semantic structure* in acoustic scenes.
 
 /*
 #figure(
@@ -241,49 +225,59 @@ The *fine-tuned ResNet18* model achieved the *best performance* on the *test set
 )
 */
 
-*ResNet18* reached a final *test accuracy* of `98.6%`, with a *weighted F1 score* of `0.9857`. It demonstrated *excellent generalization* and *balance between precision and recall* across both classes, validating the power of *transfer learning* even in *low-resolution*, *small-format image classification* tasks.
-
-// todo: do we have to keep it?
 #figure(
-  caption: [Performance Comparison of Models on the Validation Set],
+  caption: [Performance Comparison of Models on the Test Set],
   table(
-    columns: (auto, auto, auto),
-    align: (left, center, center),
-    table.header[Model][F1 Score][Accuracy],
-    [Logistic Regression], [0.8098], [81.01%],
-    [SVM], [0.9582], [95.82%],
-    [CNN], [0.9896], [98.96%],
-    [ResNet18], [0.9857], [98.57%],
+    columns: (auto, auto),
+    align: (left, center),
+    table.header[Model][ROC AUC],
+    [Fully-Connected VAE], [0.3975],
+    [Convolutional VAE], [0.7890],
+    [PANNs + Mahalanobis], [0.9311],
   ),
-) <tab:results>
+) <tab:our-results>
 
-= Model selected
+= Model Selected
 
-Although the *custom CNN* achieved a slightly higher *validation F1-score* (*0.9896*) than *ResNet18* (*0.9857*), we selected *ResNet18* as the *final model* due to its superior *robustness* and *generalization capabilities*. Its *pretrained layers* from *ImageNet* allow it to leverage *learned features* even on *small*, *low-resolution inputs* like our *32×32 aerial images*. This makes it more *reliable for deployment* on *unseen data*, where the *custom CNN* might be more prone to *overfitting*.
+Although the *Convolutional VAE* performed well and achieved high *precision* and *F1-score* on the held-out test set, the *PANNs embedding method* achieved a *substantially higher ROC AUC* of *0.9311*. Given the *unsupervised nature* of the task and the emphasis on *ranking anomaly likelihood*, *ROC AUC* was prioritized as the primary evaluation metric. Therefore, we selected the *PANNs + Mahalanobis* method as the *final model*, due to its superior *generalization*, *semantic awareness*, and *robustness to noise*. This approach is also *computationally efficient*, requiring no retraining and leveraging *powerful pretrained audio features*.
 
 
 = Inference on Unlabeled Test Set
 
-After *model selection*, we applied the four *best-performing models* — *Logistic Regression*, *SVM*, *CNN*, and *ResNet18* — to the *4000 unlabeled images* from the *test set*. Each model was used to generate a *prediction (0 or 1)* for every image, maintaining the *order* of the images as read by the *DataLoader*.
+We applied both the *Conv-VAE* and the *PANNs + Mahalanobis* pipeline to the *unlabeled evaluation set* provided. The goal was to rank test samples by *anomaly score* and identify the most suspicious examples.
 
-To combine these predictions, we employed a *weighted majority voting* strategy, assigning a *normalized weight* to each model based on its *accuracy* on the *internal test set*. The final class for each image was assigned as *1 (cactus)* if the *weighted sum* of predictions exceeded *0.5*, and *0* otherwise.
+== Conv-VAE
 
-We opted for *weighted majority voting* instead of *simple majority voting* to give greater influence to *more accurate models*. This choice reflects our aim to *prioritize* the decisions of models that demonstrated *higher reliability* during *validation* and *internal test*, thus improving the *ensemble's overall robustness* and *predictive power*.
+The *Convolutional Variational Autoencoder* computes an *anomaly score* based on the *reconstruction error* between the input spectrogram and its reconstruction. A manually selected threshold (derived from the validation ROC curve) is applied to label samples as normal or anomalous.
 
-Finally, the resulting *predictions* were saved in a *CSV file* (`ensemble_predictions.csv`) with two columns: *id* (image filename) and *label* (predicted class).
+While the model can flag anomalous instances, it suffers from:
+- *sensitivity to audio distortions*,
+- potential overfitting to training noise patterns,
+- and *limited generalization* to unseen anomalies.
+
+This makes its inference results less reliable compared to embedding-based methods.
+
+== PANNs + Mahalanobis
+
+The *PANNs model* provides *pretrained 2048-dimensional embeddings* for each audio file. By modeling the distribution of normal embeddings and computing the *Mahalanobis distance*, we obtain robust anomaly scores without retraining. This method:
+- generalizes well across machine conditions,
+- is *insensitive to minor signal variations*,
+- and produces *well-calibrated anomaly rankings*.
 
 = Conclusion and Next Steps
 
-Despite its *simplicity*, *Logistic Regression* achieved a *strong baseline performance*, demonstrating that even *linear models* can be effective when supported by appropriate *preprocessing* and *balancing techniques*.
+In this challenge, we compared three unsupervised approaches for *anomalous sound detection* on the *slider machine* using audio recordings from the MIMII dataset. Our analysis revealed that while *fully-connected VAEs* were limited by their inability to capture spectro-temporal patterns, *Convolutional VAEs* significantly improved anomaly detection by leveraging local structure in Mel spectrograms.
 
-The *SVM* outperformed logistic regression, especially in terms of *class 1 recall*, but was still constrained by the lack of *spatial awareness* in *flattened input representations*.
+However, the best results were obtained by the *PANNs-based model* with *Mahalanobis distance*, which achieved a *ROC AUC of 0.9311* without requiring retraining. This underscores the value of *pretrained semantic audio representations* for generalization in real-world noisy environments.
 
-The *custom CNN* significantly improved *classification accuracy* and *balance across classes*, confirming the advantage of *convolutional architectures* in *image-based ecological tasks*.
-
-Among all tested models, *ResNet18* stood out with *outstanding precision*, *recall*, and *F1 scores*, confirming the effectiveness of *transfer learning* even when applied to *small aerial images* of *ecological relevance*.
+As future work, we propose exploring *semi-supervised training* using pseudo-labeling strategies, experimenting with *attention-based models* applying *temporal models* (e.g., LSTMs or Transformers) to capture longer-term dependencies in machine sounds, and evaluating the use of *domain adaptation techniques* to improve robustness across different machine types or noise conditions.
 
 
 = References
-This report is inspired by the VIGIA project as described in:
 
-Efren López-Jiménez et al., *Columnar Cactus Recognition in Aerial Images using a Deep Learning Approach*, Ecological Informatics, 2019.
+This report is inspired by the DCASE challenge and its application to real-world industrial environments, as described in:
+
+DCASE Challenge Task 2 (2020), *Unsupervised Anomalous Sound Detection for Machine Condition Monitoring*.  
+The MIMII Dataset: Koizumi et al., *MIMII Dataset: Sound Dataset for Malfunctioning Industrial Machine Investigation*, 2019.  
+The ToyADMOS Dataset: Purohit et al., *ToyADMOS: A Dataset of Miniature-Machine Operating Sounds for Anomalous Sound Detection*, 2019.
+
