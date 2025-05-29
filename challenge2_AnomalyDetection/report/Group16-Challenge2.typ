@@ -40,20 +40,21 @@
 )
 
 = Introduction
-Detection of anomalies in industrial equipment is a critical task for ensuring operational efficiency and preventing costly downtimes. In this challenge, we focus on detecting anomalous sounds from a specific type of machine, the slider, using unsupervised machine learning techniques. The primary goal is to identify unknown anomalous sounds in test samples, given only normal sound recordings during training. The dataset used for this challenge includes audio recordings from MIMII dataset.
+Detection of *anomalies* in *industrial equipment* is a critical task for ensuring *operational efficiency* and preventing costly *downtime*. In this challenge, we focus on detecting *anomalous sounds* from a specific type of machine, the *slider*, using *unsupervised machine learning* techniques. The primary goal is to identify *unknown anomalous sounds* in test samples, given only *normal sound recordings* during training. The dataset used for this task consists of audio recordings from the *MIMII* dataset.
 
 = Dataset
-The dataset consists of audio recordings in *.wav* format, collected with eight microphones placed around a slider machine. all recordings are regarded as a single-channel recording as a fixed microphone. Each recording is a single-channel (approximately) 10-sec length audio that includes both a slider machine's operating sound and environmental noise. The sampling rate of all signals has been downsampled to 16 kHz.
+The dataset consists of *audio recordings* in *.wav* format, collected with *eight microphones* placed around a *slider machine*. All recordings are treated as a *single-channel* input from a *fixed microphone*. Each recording is approximately *10 seconds* long and includes both the *operating sound* of the slider machine and *environmental noise*. All signals are *downsampled* to a *sampling rate* of *16 kHz*.
 
-The training set contains normal sound recordings, while the test set includes both normal and anomalous sounds.
+The *training set* contains only *normal sound recordings*, while the *test set* includes both *normal* and *anomalous sounds*.
 
-The dataset is structured as follows:
-- *dev/ folder*: contains around 1,000 samples of normal sounds for training and 100-200 samples each of normal and anomalous sounds for testing.
-- *eval/ folder*: contains around 400 unlabeled test samples for evaluation. Inside this forlder, there are also other normal samples that can be used for training.
+The dataset is organized as follows:
+- *dev/ folder*: contains around *1,000 normal samples* for training and *100–200* samples each of *normal* and *anomalous sounds* for testing.
+- *eval/ folder*: includes approximately *400 unlabeled test samples* for evaluation, along with additional *normal samples* that may be used for training.
 
-The distribution of classes within the test set is unbalanced:
+The *class distribution* within the test set is *unbalanced*:
 - *Class Anomalous*: 801 sounds
 - *Class Normal*: 300 sounds
+
 
 #figure(
   image("img/distribution.png", width: 85%),
@@ -65,17 +66,16 @@ The distribution of classes within the test set is unbalanced:
 = Preprocessing
 
 == Mel-spectrogram transformation
-Coversion of waveform into a mel-spectrogram representation is a common practise used with time-frequency feature in audio analysis, particularly suitable for machine listening tasks like anomaly detection.
+*Conversion* of *waveform* signals into a *mel-spectrogram* representation is a common practice in *audio analysis*, especially suitable for *machine listening* tasks such as *anomaly detection*.
 
-The preprocessing involved first loading the *.wav* sounds using *Librosa* Python library and then extract mel-spectrograms using the following parameters:
-- number of FFT components, number of samples used in each Fourier Transform window;
-- hop length, determines how far apart successive analysis frames are;
-- number of mel bands, sets how many mel frequency bins to use in the final spectrogram.
+The preprocessing pipeline involves first *loading* the *.wav* audio files using the *Librosa* Python library, followed by *mel-spectrogram extraction* using the following parameters:
+- *number of FFT components*: defines the number of samples used in each Fourier Transform window;
+- *hop length*: determines the step between successive analysis frames;
+- *number of mel bands*: sets the resolution of the mel frequency axis.
 
-The mel-spectrograms were converted to decibel scale and reshaped into flattened vectors for efficient storage and model input compatibility. Extracted features were organised into separate folders for training and testing samples.
+The resulting *mel-spectrograms* are converted to the *decibel scale* and then *reshaped into flattened vectors* for efficient storage and compatibility with model input formats. The extracted features are *organized into separate folders* for training and testing purposes.
 
-A mel-spectrogram looks like this:
-
+A *mel-spectrogram* looks like this:
 #figure(
   image("img/mel_spectogram_example.png", width: 85%),
   caption: [
@@ -83,126 +83,98 @@ A mel-spectrogram looks like this:
   ],
 )
 
+
 == Feature Normalization
-After converting the audio signals to mel-spectrogram representations and flattening them into 1D feature vectors, we applied feature normalization to ensure numerical stability and improve model performance.
+After converting the *audio signals* into *mel-spectrogram* representations and flattening them into *1D feature vectors*, we applied *feature normalization* to ensure *numerical stability* and improve *model performance*.
 
-We used z-score standardization, which transforms each feature to have a mean of 0 and a standard deviation of 1. This is important for models that are sensitive to feature magnitudes, such as support vector machines and neural networks. Without normalization, features with larger numerical ranges could dominate the learning process or slow convergence.
+We used *z-score standardization*, which transforms each feature to have a *mean of 0* and a *standard deviation of 1*. This is particularly important for models that are *sensitive to feature magnitudes*, such as *support vector machines* and *neural networks*. Without normalization, features with *larger numerical ranges* could *dominate the learning process* or *slow convergence*.
 
-The normalization parameters (mean and standard deviation) were computed from the entire set of normal training samples: this aligns with the anomaly detection paradigm, where the assumption is that only normal examples are available during training.
+The *normalization parameters* (mean and standard deviation) were computed using the entire set of *normal training samples*. This is consistent with the *anomaly detection* framework, where it is assumed that only *normal examples* are available during training.
+
 
 = Models Evaluated
 
-== Logistic Regression
+== Fully-Connected Autoencoder
 
-*Logistic Regression* was used as a *baseline model* due to its *simplicity* and *interpretability*. The model was implemented using the `scikit-learn` library. Since this algorithm does not exploit *spatial structure* in images, each *32×32 RGB image* was *flattened* into a *3072-dimensional vector*.
+A *fully-connected Autoencoder* was used to learn *compressed representations* from *tabular input features*. Implemented in *PyTorch*, the model consists of a *dense encoder* that maps input vectors to a *latent space* of dimension *64*, followed by a *symmetric decoder* that reconstructs the original input.
 
-To improve *performance* and *stability*, we conducted a small *grid search* on key *hyperparameters*, tuning the *regularization strength* (`C`), the *solver*, and the *maximum number of iterations*. The tuning process was performed via *5-fold cross-validation* on the training set using *F1 score* as the evaluation metric.
+The model is trained using *mean squared error (MSE)* as the reconstruction loss and optimized with the *Adam optimizer* over *30 epochs*. A *learning rate scheduler* is applied to adjust the learning rate dynamically and help prevent overfitting.
 
 #figure(
-  caption: [Hyperparameter tuning for Logistic Regression],
+  caption: [Hyperparameter setup for Fully-Connected Autoencoder],
   table(
     columns: (auto, auto, auto),
     inset: 8pt,
     align: (left, left, center),
     table.header(
       [Hyperparameter],
-      [Ranges],
-      [Best Parameter],
+      [Ranges / Values],
+      [Used],
     ),
 
-    [C], [0.1, 1, 10], [10],
-    [solver], [lbfgs], [lbfgs],
-    [penalty], [l2], [l2],
-    [max_iter], [1500, 3000], [1500],
+    [latent_dim], [64 (AE), 8 (VAE)], [64 / 8],
+    [optimizer], [Adam], [Adam],
+    [lr], [1e-3], [1e-3],
+    [β], [0.001], [0.001],
   ),
-) <tab:lr-hyperparams>
-
-While the model is limited by its *inability to learn spatial features*, it remains a *valuable baseline* that performs surprisingly well in this context, particularly when combined with proper *preprocessing* and *class balancing*.
+) <tab:autoencoder-params>
 
 
-== Support Vector Machine
+== Convolutional Variational Autoencoder
 
-*Support Vector Machines (SVM)* are well-suited for *binary classification* tasks with *high-dimensional* input spaces. In our setup, the images were first *flattened* into *3072-dimensional vectors* and then *standardized* using *z-score normalization*.
+A *Convolutional Variational Autoencoder (ConvVAE)* was used to learn *low-dimensional embeddings* of *Mel spectrograms* derived from *16kHz audio data*. The model, implemented in *PyTorch*, includes a *convolutional encoder* that projects inputs to a *latent space* of dimension *8*, *16*, or *32*, and a *decoder* that reconstructs the spectrogram from the latent representation. Input spectrograms are *standardized* and *padded* to maintain spatial compatibility throughout the network.
 
-We performed a *grid search* on key *hyperparameters* using *5-fold cross-validation* to optimize *model performance*. The tested hyperparameters included different *kernel types* (`rbf`, `sigmoid`, `poly`), values for *regularization parameter* `C`, and *kernel coefficient* `gamma`.
+The architecture applies the *reparameterization trick* to enable stochastic sampling during training and combines *reconstruction loss* with *KL divergence* using a *β-VAE loss formulation*. The model supports configurable *latent dimensionality* and *β weighting*, allowing tuning of the trade-off between reconstruction accuracy and latent space regularization.
 
 #figure(
-  caption: [Hyperparameter tuning for SVM],
+  caption: [Hyperparameter setup for ConvVAE],
   table(
     columns: (auto, auto, auto),
     inset: 8pt,
     align: (left, left, center),
     table.header(
       [Hyperparameter],
-      [Ranges],
-      [Best Parameter],
+      [Ranges / Values],
+      [Used],
     ),
 
-    [C], [0.1, 1, 10], [10],
-    [kernels], ['rbf', 'sigmoid', 'poly'], [rbf],
-    [gammas], ['scale', 'auto'], [scale],
+    [latent_dim], [8, 16, 32], [8],
+    [β], [0.01, 0.1, 1.0], [0.1],
   ),
-) <tab:svm-hyperparams>
-
-The *optimal configuration* consisted of an *RBF kernel* with `C=10` and `gamma='scale'`. Although *computationally more expensive* than logistic regression, SVM provided improved *generalization capabilities* by modeling *non-linear boundaries* in the data space.
+) <tab:vae-hyperparams>
 
 
-== Convolutional Neural Network (CNN)
+== Variational Autoencoder
 
-To better capture *spatial structures* in the images, we implemented a *custom Convolutional Neural Network (CNN)* using *PyTorch*. The architecture was designed with *simplicity* in mind to ensure *interpretability* and *fast training*, yet flexible enough to benefit from *data augmentation*.
+A *Variational Autoencoder (VAE)* was used to learn *compact latent representations* from tabular data. The model is implemented in *PyTorch* and features a *fully-connected encoder* that maps inputs to a *latent space* of dimension *8*, using separate layers to estimate the *mean* and *log-variance*.
 
-The model consists of two *convolutional layers* followed by *max-pooling*, *batch normalization*, *ReLU activation*, and *dropout*. The final layers are *fully connected* with a *sigmoid output unit* for *binary classification*.
-
-We performed a *grid search* on four key *hyperparameters* to *fine-tune* the model.
+A *decoder* reconstructs the input from a latent variable obtained through the *reparameterization trick*. The loss function combines *mean squared error (MSE)* for reconstruction and *KL divergence* for regularization, forming a *β-VAE loss*. The model is trained with the *Adam optimizer*, and a *learning rate scheduler* is used to reduce learning rate when performance plateaus.
 
 #figure(
-  caption: [Hyperparameter tuning for general CNN],
+  caption: [Hyperparameter setup for VAE],
   table(
     columns: (auto, auto, auto),
     inset: 8pt,
     align: (left, left, center),
     table.header(
       [Hyperparameter],
-      [Ranges],
-      [Best Parameter],
+      [Ranges / Values],
+      [Used],
     ),
 
-    [learning rate], [0.001, 0.005, 0.01], [0.001],
-    [drop_out], [0.25, 0.4, 0.5], [0.25],
-    [initial_filters], [8, 16, 32], [32],
-    [fc layers], [64, 100, 128], [64],
+    [latent_dim], [8, 16], [8],
+    [optimizer], [Adam], [Adam],
+    [lr], [1e-3], [1e-3],
+    [β], [0.001], [0.001],
   ),
-) <tab:cnn-hyperparams>
-
-The model was trained for *10 epochs* using the *Adam optimizer* and *binary cross-entropy loss*. *Data augmentation* included *random horizontal/vertical flips* and *slight rotations*, applied *on the fly* during training. Thanks to this setup, the CNN was able to learn *meaningful spatial patterns*, achieving *substantial improvements* over *non-convolutional models*.
+) <tab:vae-params>
 
 
-== ResNet18
+== PANNs Pretrained Model
 
-To leverage *deep feature representations* learned from *large-scale image datasets*, we adopted a *transfer learning* approach using *PyTorch’s pretrained ResNet18 model*. The model, originally trained on *ImageNet*, was adapted to our *binary classification* task by replacing the final *fully connected layer* with a *custom head*: a *single neuron* followed by a *sigmoid activation function*.
+The model *Cnn14* is a *pretrained convolutional neural network* from the *PANNs* (Pretrained Audio Neural Networks) family. It was trained on the *AudioSet* dataset and is designed for *general-purpose audio tagging*. The model takes *raw waveform input* and produces a fixed-size *2048-dimensional embedding* that captures *high-level acoustic features*.
 
-We *froze* the pretrained layers and *fine-tuned* only the *final block* and *classification head*. Images were resized to *224×224* to match the *input size* expected by ResNet18.
-
-A small *grid search* was conducted to tune the *learning rate* and *optimizer*.
-
-#figure(
-  caption: [Hyperparameter tuning for general ResNet18],
-  table(
-    columns: (auto, auto, auto),
-    inset: 8pt,
-    align: (left, left, center),
-    table.header(
-      [Hyperparameter],
-      [Ranges],
-      [Best Parameter],
-    ),
-
-    [learning rate], [0.001, 0.0001], [0.001],
-    [optimizer], ['adam', 'sgd'], ['adam'],
-  ),
-) <tab:resnet-hyperparams>
-
-The model was trained using *binary cross-entropy loss* and the *Adam optimizer*. We applied *moderate data augmentation* (*horizontal/vertical flips* and *rotations*) and *early stopping* to avoid *overfitting*. The results demonstrated *superior performance* compared to all other models evaluated.
+Implemented via the *panns_inference* library, the model is used in *inference mode only*, with no additional training or fine-tuning. Audio inputs are *converted to mono*, *resampled to 32kHz*, and passed to the model through the provided *AudioTagging* interface. The resulting embeddings can be used for downstream tasks without modifying the network, leveraging its *pretrained audio representations*.
 
 = Metric Justification
 
@@ -215,12 +187,14 @@ Given the *class imbalance*, we used the *F1 score* as the main metric, as it ba
 
 The best *logistic regression* model, trained with the selected *hyperparameters*, was evaluated on the *held-out test set*. The table below summarizes the *classification performance per class*:
 
+/*
 #figure(
   image("img/lr_results.png", width: 85%),
   caption: [
     Metrics for Logistic Regression
   ],
 )
+*/
 
 The model achieved a final *test accuracy* of *81.01%*. It showed very high *precision* for class 0 (*no cactus*), but the relatively low *recall* (*0.55*) indicates many *false negatives*. For class 1 (*cactus*), the model achieved *strong performance* across all metrics, reflecting its *bias toward the majority class*. This suggests that while the *logistic regression model* benefits from the *augmentation strategy*, it still struggles with *class imbalance* and lacks the capacity to model *complex spatial patterns*.
 
@@ -228,12 +202,14 @@ The model achieved a final *test accuracy* of *81.01%*. It showed very high *pre
 
 The best-performing *SVM* model was evaluated on the *test set*. The performance breakdown per class is shown below:
 
+/*
 #figure(
   image("img/svm_results.png", width: 85%),
   caption: [
     Metrics for SVM
   ],
 )
+*/
 
 The overall *test accuracy* was *95.8%*, with a *weighted F1 score* of *0.9582*. The SVM showed higher *recall* for the *cactus class* (class 1), and moderately improved *recall* on the *minority class* (class 0) compared to *logistic regression*. This confirms the model’s ability to capture *non-linear decision boundaries* through the *RBF kernel*, although it still struggled with some *overlap in feature space*.
 
@@ -241,12 +217,14 @@ The overall *test accuracy* was *95.8%*, with a *weighted F1 score* of *0.9582*.
 
 The best *CNN* model was evaluated on the *held-out test set*. The performance results per class are as follows:
 
+/*
 #figure(
   image("img/cnn_results.png", width: 85%),
   caption: [
     Metrics for SVM
   ],
 )
+*/
 
 The final *test accuracy* was *99.0%*, with a *weighted average F1 score* of *0.9896*. The *CNN* outperformed both *logistic regression* and *SVM* by a wide margin, particularly in identifying *minority class* (class 0) samples, thanks to its ability to learn *local spatial features* and *generalize well* from *augmented examples*.
 
@@ -254,12 +232,14 @@ The final *test accuracy* was *99.0%*, with a *weighted average F1 score* of *0.
 
 The *fine-tuned ResNet18* model achieved the *best performance* on the *test set*. Below is the detailed *classification report*:
 
+/*
 #figure(
   image("img/resnet_results.png", width: 85%),
   caption: [
     Metrics for SVM
   ],
 )
+*/
 
 *ResNet18* reached a final *test accuracy* of `98.6%`, with a *weighted F1 score* of `0.9857`. It demonstrated *excellent generalization* and *balance between precision and recall* across both classes, validating the power of *transfer learning* even in *low-resolution*, *small-format image classification* tasks.
 
