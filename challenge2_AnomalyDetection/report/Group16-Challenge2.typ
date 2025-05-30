@@ -146,7 +146,7 @@ The model uses the *reparameterization trick* to allow backpropagation through s
 
 == Variational Autoencoder
 
-A *Variational Autoencoder (VAE)* was used to learn *compact latent representations* from tabular data. The model is implemented in *PyTorch* and features a *fully-connected encoder* that maps inputs to a *latent space* of dimension *8*, using separate layers to estimate the *mean* and *log-variance*.
+A *Fully-Connected Variational Autoencoder (VAE)* was used to learn *compact latent representations* from tabular data. The model is implemented in *PyTorch* and features a *fully-connected encoder* that maps inputs to a *latent space* of dimension *8*, using separate layers to estimate the *mean* and *log-variance*.
 
 A *decoder* reconstructs the input from a latent variable obtained through the *reparameterization trick*. The loss function combines *mean squared error (MSE)* for reconstruction and *KL divergence* for regularization, forming a *β-VAE loss*. The model is trained with the *Adam optimizer*, and a *learning rate scheduler* is used to reduce learning rate when performance plateaus.
 
@@ -176,6 +176,14 @@ The model *Cnn14* is a *pretrained convolutional neural network* from the *PANNs
 
 Implemented via the *panns_inference* library, the model is used in *inference mode only*, with no additional training or fine-tuning. Audio inputs are *converted to mono*, *resampled to 32kHz*, and passed to the model through the provided *AudioTagging* interface. The resulting embeddings can be used for downstream tasks without modifying the network, leveraging its *pretrained audio representations*.
 
+== VGGish Pretrained Model
+
+VGGish is a pretrained convolutional neural network developed by Google and trained on a large-scale YouTube audio dataset for audio classification tasks. It transforms raw audio waveforms into 128-dimensional embeddings that capture semantic-level acoustic information. The model operates on log-mel spectrograms computed from audio resampled to 16kHz, and includes a post-processing PCA step for dimensionality reduction and whitening.
+
+In our pipeline, VGGish is used strictly in inference mode, without additional training or fine-tuning. Audio samples are preprocessed to fit the model’s expected input format and passed through the network to obtain fixed-size embeddings. These embeddings are then used for anomaly detection, leveraging the rich representational capacity of the pretrained model to characterize normal audio behavior.
+
+
+
 = Metric Justification
 
 To evaluate model performance in ranking anomalies, we primarily used the *ROC AUC*, which measures the model's ability to distinguish between *normal* and *anomalous* samples, independently of a decision threshold. This is particularly important in *unsupervised anomaly detection*, where decision boundaries are not known a priori.
@@ -185,6 +193,10 @@ While additional classification metrics such as *F1-score*, *precision*, and *re
 
 
 = Results Summary
+
+== Detailed Results – Fully-Connected Encoder 
+
+Prior to implementing the Variational Autoencoder, we trained a simple *fully-connected encoder* on the same normalized tabular Mel spectrograms. Unlike the VAE, this model did not include a generative decoder; instead, it focused purely on compressing input representations. Anomaly scores were computed using the Mean Squared Error (MSE) between the encoded representations of test samples and the mean embedding vector of the training data. Despite its simplicity, this approach achieved a ROC AUC of 0.7109, highlighting that even a basic encoder can yield meaningful representations for anomaly detection when combined with a suitable scoring function.
 
 == Detailed Results – *Fully-Connected VAE*
 
@@ -216,6 +228,14 @@ The *Convolutional VAE* (*ConvVAE*) was trained directly on *2D Mel spectrograms
 
 The *PANNs-based model* used a *pretrained Cnn14 architecture* to extract *2048-dimensional embeddings* from raw waveforms. An anomaly score was computed using the *Mahalanobis distance* from the mean of normal embeddings. This method achieved the best overall result, with a *ROC AUC* of *0.9311*, significantly outperforming the reconstruction-based approaches. The strong performance confirms the effectiveness of *pretrained audio representations* for capturing *semantic structure* in acoustic scenes.
 
+== Detailed Results – VGGish Embedding + Mahalanobis Distance
+
+The *VGGish model* was used to generate 128-dimensional embeddings from the audio inputs. Anomaly detection was performed by computing the Mahalanobis distance between each test embedding and the distribution of embeddings obtained from normal training data. This method achieved a ROC AUC of 0.8513, confirming the effectiveness of transfer learning and pretrained audio representations for detecting anomalous acoustic events. While not as performant as PANNs, the results show that VGGish embeddings still capture relevant structure in the data, providing a strong balance between efficiency and accuracy.
+
+== Metric Selection Rationale
+
+For both VGGish and PANNs-based models, we experimented with different anomaly scoring methods, including Euclidean and cosine distances. However, we observed that using the Mahalanobis distance consistently yielded significantly better results—improving ROC AUC scores by approximately 10 percentage points. This improvement is likely due to Mahalanobis distance accounting for the covariance structure of the embedding space, making it more sensitive to deviations from the normal distribution in high-dimensional representations.
+
 /*
 #figure(
   image("img/resnet_results.png", width: 85%),
@@ -231,9 +251,11 @@ The *PANNs-based model* used a *pretrained Cnn14 architecture* to extract *2048-
     columns: (auto, auto),
     align: (left, center),
     table.header[Model][ROC AUC],
+    [Fully-Connected Encoder], [0.7109],
     [Fully-Connected VAE], [0.3975],
     [Convolutional VAE], [0.7890],
     [PANNs + Mahalanobis], [0.9311],
+    [VGGish + Mahalanobis], [0.8513],
   ),
 ) <tab:our-results>
 
