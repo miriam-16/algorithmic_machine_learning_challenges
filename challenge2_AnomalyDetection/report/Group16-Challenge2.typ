@@ -75,11 +75,10 @@ The preprocessing pipeline involves first *loading* the *.wav* audio files using
 
 The resulting *mel-spectrograms* are converted to the *decibel scale* and then *reshaped into flattened vectors* for efficient storage and compatibility with model input formats. The extracted features are *organized into separate folders* for training and testing purposes.
 
-The *ROC curve* looks like this:
 #figure(
   image("img/mel_spectogram_example.png", width: 85%),
   caption: [
-    Example of ROC curve.
+    Example of a mel-spectrogram extracted from a slider machine audio recording.
   ],
 )
 
@@ -193,7 +192,7 @@ While additional classification metrics such as *F1-score*, *precision*, and *re
 
 = Results Summary
 
-== Detailed Results – Fully-Connected Encoder 
+== Detailed Results – Fully-Connected Encoder
 
 Prior to implementing the *Variational Autoencoder*, we trained a simple *fully-connected encoder* on the same *normalized tabular Mel spectrograms*. Unlike the *VAE*, this model did not include a *generative decoder*; instead, it focused purely on *compressing input representations*. *Anomaly scores* were computed using the *Mean Squared Error (MSE)* between the *encoded representations* of test samples and the *mean embedding vector* of the training data. Despite its simplicity, this approach achieved a *ROC AUC of 0.7109*, highlighting that even a *basic encoder* can yield *meaningful representations* for *anomaly detection* when combined with a *suitable scoring function*.
 
@@ -235,15 +234,15 @@ For both *VGGish* and *PANNs-based models*, we experimented with different *anom
 
 = Model Selected
 
-Although the *Convolutional VAE* performed well and achieved high *precision* and *F1-score* on the held-out test set, the *PANNs embedding method* achieved a *substantially higher ROC AUC* of *0.9311*. Given the *unsupervised nature* of the task and the emphasis on *ranking anomaly likelihood*, *ROC AUC* was prioritized as the primary evaluation metric. Therefore, we selected the *PANNs + Mahalanobis* method as the *final model*, due to its superior *generalization*, *semantic awareness*, and *robustness to noise*. This approach is also *computationally efficient*, requiring no retraining and leveraging *powerful pretrained audio features*.
 
-A *mel-spectrogram* looks like this:
+Although the *Convolutional VAE* performed well and achieved high *precision* and *F1-score* on the held-out test set, the *PANNs embedding method* achieved a *substantially higher ROC AUC* of *0.9311*. Given the *unsupervised nature* of the task and the emphasis on *ranking anomaly likelihood*, *ROC AUC* was prioritized as the primary evaluation metric.
+
 #figure(
-  image("img/mahala.png", width: 85%),
-  caption: [
-    Example of a mel-spectrogram.
-  ],
+  image("img/mahala.png", width: 90%),
 )
+
+ Therefore, we selected the *PANNs + Mahalanobis* method as the *final model*, due to its superior *generalization*, *semantic awareness*, and *robustness to noise*. This approach is also *computationally efficient*, requiring no retraining and leveraging *powerful pretrained audio features*.
+
 
 = Inference on Unlabeled Test Set
 
@@ -280,7 +279,7 @@ As future work, we propose exploring *semi-supervised training* using pseudo-lab
 
 This report is inspired by the DCASE challenge and its application to real-world industrial environments, as described in:
 
-DCASE Challenge Task 2 (2020), *Unsupervised Anomalous Sound Detection for Machine Condition Monitoring*.  
-The MIMII Dataset: Koizumi et al., *MIMII Dataset: Sound Dataset for Malfunctioning Industrial Machine Investigation*, 2019.  
+DCASE Challenge Task 2 (2020), *Unsupervised Anomalous Sound Detection for Machine Condition Monitoring*.
+The MIMII Dataset: Koizumi et al., *MIMII Dataset: Sound Dataset for Malfunctioning Industrial Machine Investigation*, 2019.
 The ToyADMOS Dataset: Purohit et al., *ToyADMOS: A Dataset of Miniature-Machine Operating Sounds for Anomalous Sound Detection*, 2019.
 
