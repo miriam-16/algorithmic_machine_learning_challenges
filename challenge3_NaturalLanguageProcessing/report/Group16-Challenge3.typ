@@ -184,6 +184,60 @@ The model is trained using the *Adam optimizer* and *sparse categorical crossent
 ) <tab:attn-rnn-params>
 
 
+== TF-IDF + Traditional Classifiers for Sentiment Analysis
+
+A *classic machine learning pipeline* was employed to classify *tweet sentiment* using a *TF-IDF vectorization* of preprocessed text. Input text is tokenized, cleaned, and then transformed into a *TF-IDF matrix* (`max_features=5000`) using *scikit-learn’s TfidfVectorizer*. The resulting sparse matrix represents word importance across documents and serves as input to various *supervised classifiers*.
+
+Multiple models were evaluated, including *Logistic Regression*, *Linear SVM (SVC)*, *Multinomial Naive Bayes*, and *Random Forests*. Each model is trained on *70% of the data*, validated on *15%*, and tested on the remaining *15%*. The primary metric for evaluation is the *macro-averaged F1 score*, complemented by *classification reports* and *confusion matrices*.
+
+#figure(
+  caption: [Hyperparameter setup for TF-IDF + Traditional Classifiers],
+  table(
+    columns: (auto, auto, auto),
+    inset: 8pt,
+    align: (left, left, center),
+    table.header(
+      [Component],
+      [Details],
+      [Used],
+    ),
+
+    [vectorizer], [TfidfVectorizer], [✓],
+    [max_features], [1000–10000], [5000],
+    [classifiers], [LogReg, SVM, RF, NB], [RF],
+  ),
+) <tab:tfidf-params>
+
+
+== GloVe + LSTM Sentiment Classifier
+
+A *GloVe-augmented LSTM model* was developed for *tweet sentiment classification*, combining *pretrained word embeddings* with a standard *LSTM architecture*. Input texts are first tokenized and padded to a *fixed length of 100*, then mapped to *100-dimensional GloVe vectors* (`glove.6B.100d`) to incorporate *semantic word relationships*. These embeddings are fed into a *single LSTM layer*, followed by a *dropout* and *dense softmax output* for multi-class classification.
+
+The model was trained using *sparse categorical crossentropy* and the *Adam optimizer*, with training/validation/test splits of *70%/15%/15%*. The use of *pretrained embeddings* enabled better generalization, particularly for rare or out-of-vocabulary tokens. Final evaluation was performed using *macro F1 score* and a *detailed classification report*, revealing robust performance across sentiment classes.
+
+#figure(
+  caption: [Hyperparameter setup for GloVe + LSTM Sentiment Classifier],
+  table(
+    columns: (auto, auto, auto),
+    inset: 8pt,
+    align: (left, left, center),
+    table.header(
+      [Hyperparameter],
+      [Ranges / Values],
+      [Used],
+    ),
+
+    [embedding_type], [GloVe 6B 100d], [✓],
+    [embedding_dim], [50, 100, 200], [100],
+    [lstm_units], [32, 64, 128], [64],
+    [dropout], [0.3–0.5], [0.5],
+    [optimizer], [Adam], [Adam],
+    [batch_size], [32, 64], [64],
+    [epochs], [5-20], [5],
+  ),
+) <tab:glove-lstm-params>
+
+
 == RoBERTa-Based Sentiment Classifier
 
 A *Transformer-based model*, specifically *RoBERTa fine-tuned for sentiment analysis*, was implemented using the *Hugging Face Transformers* library. The model used is `"cardiffnlp/twitter-roberta-base-sentiment"`, pre-trained on social media text. Input sentences are first *tokenized* using the corresponding *AutoTokenizer*, padded and truncated appropriately, and then passed to the *RoBERTa model* which outputs contextualized representations. A classification head maps these to *three sentiment classes*.
@@ -209,34 +263,6 @@ The model is trained using the *Trainer API* with *weighted F1 score*, *accuracy
 ) <tab:roberta-params>
 
 
-== TF-IDF + Traditional Classifiers for Sentiment Analysis
-
-A *classic machine learning pipeline* was employed to classify *tweet sentiment* using a *TF-IDF vectorization* of preprocessed text. Input text is tokenized, cleaned, and then transformed into a *TF-IDF matrix* (`max_features=5000`) using *scikit-learn’s TfidfVectorizer*. The resulting sparse matrix represents word importance across documents and serves as input to various *supervised classifiers*.
-
-Multiple models were evaluated, including *Logistic Regression*, *Linear SVM (SVC)*, *Multinomial Naive Bayes*, and *Random Forests*. Each model is trained on *70% of the data*, validated on *15%*, and tested on the remaining *15%*. The primary metric for evaluation is the *macro-averaged F1 score*, complemented by *classification reports* and *confusion matrices*.
-
-#figure(
-  caption: [Hyperparameter setup for TF-IDF + Traditional Classifiers],
-  table(
-    columns: (auto, auto, auto),
-    inset: 8pt,
-    align: (left, left, center),
-    table.header(
-      [Component],
-      [Details],
-      [Used],
-    ),
-
-    [vectorizer], [TfidfVectorizer], [✓],
-    [max_features], [1000–10000], [5000],
-    [classifiers], [LogReg, SVM, RF, NB], [✓],
-    [split ratio], [70/15/15], [✓],
-    [loss / objective], [varies by model], [✓],
-    [evaluation], [F1-macro, ConfMatrix], [✓],
-  ),
-) <tab:tfidf-params>
-
-
 
 
 = Metric Justification
@@ -247,58 +273,62 @@ While additional classification metrics such as *F1-score*, *precision*, and *re
 
 
 
+
 = Results Summary
 
-== Detailed Results – Fully-Connected Encoder
+== Detailed Results – GRU Classifier
 
-Prior to implementing the *Variational Autoencoder*, we trained a simple *fully-connected encoder* on the same *normalized tabular Mel spectrograms*. Unlike the *VAE*, this model did not include a *generative decoder*; instead, it focused purely on *compressing input representations*. *Anomaly scores* were computed using the *Mean Squared Error (MSE)* between the *encoded representations* of test samples and the *mean embedding vector* of the training data. Despite its simplicity, this approach achieved a *ROC AUC of 0.7109*, highlighting that even a *basic encoder* can yield *meaningful representations* for *anomaly detection* when combined with a *suitable scoring function*.
+The *GRU-based model* obtained a lower *macro F1 score of 0.6304*, showing decreased precision and recall, particularly on the *neutral* class (F1 = 0.56). Despite the architectural efficiency of GRUs, their performance on this dataset did not surpass LSTM-based models, highlighting the sensitivity of sentiment classification to subtle sequential dependencies.
 
+== Detailed Results – RNN Classifier
 
-== Detailed Results – Fully-Connected VAE
+The *Recurrent Neural Network (RNN)* with a single *LSTM layer* achieved a *macro F1 score of 0.6755* on the test set. While the model performed reasonably across all sentiment classes, its recall for *neutral* sentiment (0.60) lagged slightly, indicating difficulty distinguishing non-polar content. Nevertheless, the model demonstrated stable performance, especially on *positive* samples, and serves as a robust baseline.
 
-The *fully-connected Variational Autoencoder* (*VAE*) was trained on *normalized tabular representations* of the Mel spectrograms. Despite effective training convergence (with total loss decreasing from over *10,000* to below *1,000*) the final *ROC AUC* was only *0.3975*. This suggests the learned embeddings were *not sufficiently informative* for distinguishing anomalous samples. The poor performance may stem from the VAE's *limited capacity to model temporal and spatial structure* in spectrogram data.
+== Detailed Results – RNN + Self-Attention
 
-== Detailed Results – Convolutional VAE
+Integrating a *Self-Attention layer* on top of GRUs resulted in a *macro F1 score of 0.6924*, the highest among the custom RNN architectures. Notably, the *positive class* achieved an F1 of 0.76, with the *neutral* class also improving compared to previous models. The attention mechanism clearly enhanced the model's ability to focus on relevant contextual tokens, leading to more balanced predictions.
 
-The *Convolutional VAE* (*ConvVAE*) was trained directly on *2D Mel spectrograms*, using convolutional layers to better capture *local spatial structure*. A grid search over *latent dimensions* and *β values* identified the optimal setting as `latent_dim=32`, `β=0.01`, yielding a *cross-validated loss* of *33689.0*. Final evaluation on the test set produced a *ROC AUC* of *0.7890*, with an *F1-score* of *0.8575*, *accuracy* of *0.7947*, and *precision* of *0.8662*. These results confirm the model's ability to *accurately reconstruct normal patterns* while effectively distinguishing *anomalous events*.
+== Detailed Results – RoBERTa Classifier
 
-== Detailed Results – PANNs Embedding + Mahalanobis Distance
+The *pretrained RoBERTa model* (`cardiffnlp/twitter-roberta-base-sentiment`) significantly outperformed all other approaches, achieving a *macro F1 score of 0.8110* and an *overall accuracy of 81%*. Precision, recall, and F1 were highly consistent across all classes, with especially strong performance on *positive* sentiment (F1 = 0.85). This confirms the power of *transfer learning* and contextual embeddings for handling informal, user-generated content like tweets.
 
-The *PANNs-based model* used a *pretrained Cnn14 architecture* to extract *2048-dimensional embeddings* from raw waveforms. An anomaly score was computed using the *Mahalanobis distance* from the mean of normal embeddings. This method achieved the best overall result, with a *ROC AUC* of *0.9311*, significantly outperforming the reconstruction-based approaches. The strong performance confirms the effectiveness of *pretrained audio representations* for capturing *semantic structure* in acoustic scenes.
+== Detailed Results – GloVe + LSTM
 
-== Detailed Results – VGGish Embedding + Mahalanobis Distance
+The *GloVe + LSTM* model combined *pretrained GloVe embeddings* (`glove.6B.100d`) with a classic *LSTM architecture* to classify tweet sentiment. This approach achieved a *macro F1 score of 0.7134* on the test set. The model performed consistently across all classes, with particularly balanced results for *neutral* (F1 = 0.69) and *positive* (F1 = 0.76) sentiments. Its ability to integrate *semantic information* from pretrained vectors allowed it to well generalize.
 
-The *VGGish model* was used to generate *128-dimensional embeddings* from the audio inputs. *Anomaly detection* was performed by computing the *Mahalanobis distance* between each test embedding and the distribution of embeddings obtained from *normal training data*. This method achieved a *ROC AUC of 0.8513*, confirming the effectiveness of *transfer learning* and *pretrained audio representations* for detecting *anomalous acoustic events*. While not as performant as *PANNs*, the results show that *VGGish embeddings* still capture *relevant structure* in the data, providing a strong balance between *efficiency* and *accuracy*.
+== Detailed Results – TF-IDF + Random Forest
 
-== *Metric Selection Rationale*
+Using a *TF-IDF representation* (`max_features=5000`) combined with a *Random Forest classifier*, this classical machine learning setup achieved a *macro F1 score of 0.7125*. The model performed particularly well on the *positive* (F1 = 0.76) and *neutral* (F1 = 0.70) classes, demonstrating that, with well-engineered features, traditional ensemble methods can still be competitive. Although less flexible than deep architectures, this approach offers robustness, simplicity, and high interpretability.
 
-For both *VGGish* and *PANNs-based models*, we experimented with different *anomaly scoring methods*, including *Euclidean* and *cosine distances*. However, we observed that using the *Mahalanobis distance* consistently yielded significantly better results—improving *ROC AUC scores* by approximately *10 percentage points*. This improvement is likely due to *Mahalanobis distance* accounting for the *covariance structure* of the *embedding space*, making it more sensitive to *deviations from the normal distribution* in *high-dimensional representations*.
+== Metric Selection Rationale
 
+All models were evaluated using the *macro-averaged F1 score* to fairly represent performance across imbalanced classes. While traditional classifiers benefited from interpretability and simplicity, *deep learning* models—especially those with attention or pretraining—demonstrated superior generalization and robustness. *RoBERTa*, in particular, shows the effectiveness of leveraging large-scale pretrained language representations for fine-grained sentiment understanding.
 
 #figure(
   caption: [Performance Comparison of Models on the Test Set],
   table(
     columns: (auto, auto),
     align: (left, center),
-    table.header[Model][ROC AUC],
-    [Fully-Connected Encoder], [0.7109],
-    [Fully-Connected VAE], [0.3975],
-    [Convolutional VAE], [0.7890],
-    [PANNs + Mahalanobis], [0.9311],
-    [VGGish + Mahalanobis], [0.8513],
+    table.header[Model][F1 Macro],
+    [RNN (LSTM)], [0.6755],
+    [GRU], [0.6304],
+    [RNN + Self-Attention], [0.6924],
+    [TF-IDF + Random Forest], [0.7125],
+    [GloVe + LSTM], [0.7134],
+    [RoBERTa (pretrained)], [0.8110],
   ),
-) <tab:our-results>
+) <tab:final-results>
+
+
+
 
 = Model Selected
 
+Although both the *TF-IDF + Random Forest*, *RNN + Self-Attention* and *GloVe + LSTM* models performed reasonably well—achieving *macro F1 scores* of *0.7125* and *0.6924* respectively—the *RoBERTa-based classifier* clearly outperformed all alternatives, reaching a *macro F1 score of 0.8110* and an *overall accuracy of 81%* on the test set.
 
-Although the *Convolutional VAE* performed well and achieved high *precision* and *F1-score* on the held-out test set, the *PANNs embedding method* achieved a *substantially higher ROC AUC* of *0.9311*. Given the *unsupervised nature* of the task and the emphasis on *ranking anomaly likelihood*, *ROC AUC* was prioritized as the primary evaluation metric.
+Given the *supervised nature* of the task and the importance of capturing *contextual sentiment nuances* across informal text, *macro F1 score* was prioritized as the primary evaluation metric to ensure balanced performance across all classes.
 
-/* #figure(
-  image("img/mahala.png", width: 90%),
-) */
-
- Therefore, we selected the *PANNs + Mahalanobis* method as the *final model*, due to its superior *generalization*, *semantic awareness*, and *robustness to noise*. This approach is also *computationally efficient*, requiring no retraining and leveraging *powerful pretrained audio features*.
+Therefore, we selected the *RoBERTa (pretrained)* model as the *final architecture*, due to its superior *generalization ability*, *contextual understanding*, and consistent performance across all sentiment categories. This model leverages *state-of-the-art transformer representations* and benefits from *pretraining on large-scale social media data*, requiring minimal task-specific tuning while delivering *high-quality sentiment predictions*.
 
 
 = Inference on Unlabeled Test Set
