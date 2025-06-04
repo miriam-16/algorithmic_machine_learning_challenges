@@ -42,7 +42,14 @@
 Sentiment analysis is the process of determining the opinion, judgment, or emotion behind natural language. It can be a can be a very powerful technique since it is widely applied to voice of the customer materials such as reviews and survey responses, online and social media. The most advanced sentiment analysis can identify precise emotions like anger, sarcasm, confidence or frustration. In this challenge, we focus on sentence-level sentiment analysis, which evaluates sentiment from a single sentence. The primary goal is to classify sentences into one of three categories: *positive*, *negative*, or *neutral*. The dataset used for this task consists of *tweets from Figure Eight's Data* for Everyone platform.
 
 = Dataset
-The dataset consists of *24732 tweets*, collected from the Everyone platform. The dataset is split into training and testing set.
+
+The dataset is provided in CSV format, with each row representing a tweet and its associated metadata.
+The training set contains *24732 samples*, while the test set contains *2748 samples*. The dataset is available on the *Figure Eight* platform, which provides a wide range of datasets for various machine learning tasks.
+Inside training set, four columns are present:
+- *textID*: unique identifier for each tweet;
+- *text*: the tweet text;
+- *selected_text*: the text selected by the annotator as the most relevant part of the tweet for sentiment analysis;
+- *sentiment*: the sentiment label assigned to the tweet, which can be one of three classes: *positive*, *negative*, or *neutral*.
 
 The *class distribution* within the training set is *unbalanced*:
 - *positive*: 7711 samples
@@ -58,30 +65,36 @@ The *class distribution* within the training set is *unbalanced*:
 )
 
 = Preprocessing
+In order to prepare the dataset for training, we performed several preprocessing steps on the text data:
+- *removing URLs, mentions and hashtags*: URLs, mentions, and hashtags were removed from the text to focus on the actual content of the tweet;
+- *removing punctuation and special characters*: punctuation marks and special characters were removed to simplify the text and reduce noise;
+- *conversion of numbers into words*: numbers were converted into their word equivalents to maintain consistency in the text;
+- *lowercase*: all text was converted to lowercase to ensure uniformity and avoid case sensitivity issues;
+- *removing stop words*: common words that do not contribute to the sentiment analysis were removed to reduce noise and improve model performance. Words of negation such as "not" and "no" were kept, as they can significantly impact the sentiment of a sentence;
+- *tokenization*: the text was tokenized into individual words to facilitate further processing and analysis.
 
-== Mel-spectrogram transformation
-*Conversion* of *waveform* signals into a *mel-spectrogram* representation is a common practice in *audio analysis*, especially suitable for *machine listening* tasks such as *anomaly detection*.
+It follows the WordCloud visualization of the most frequent words in the training set, depending on the class they belongs to, which highlights the most common terms used in the tweets. This visualization can help identify key themes and topics present in the dataset.
 
-The preprocessing pipeline involves first *loading* the *.wav* audio files using the *Librosa* Python library, followed by *mel-spectrogram extraction* using the following parameters:
-- *number of FFT components*: defines the number of samples used in each Fourier Transform window;
-- *hop length*: determines the step between successive analysis frames;
-- *number of mel bands*: sets the resolution of the mel frequency axis.
-
-The resulting *mel-spectrograms* are converted to the *decibel scale* and then *reshaped into flattened vectors* for efficient storage and compatibility with model input formats. The extracted features are *organized into separate folders* for training and testing purposes.
+#let vimg(body) = {
+    rect(width: 10mm, height: 5mm)[
+        #text(body)
+    ]
+}
 
 #figure(
-  image("img/mel_spectogram_example.png", width: 85%),
-  caption: [
-    Example of a mel-spectrogram extracted from a slider machine audio recording.
-  ],
+  grid(
+    columns: (auto, auto, auto),
+    rows: (auto),
+    gutter: 1em,
+    [
+      #image("img/negative_wordcloud.png", width: 80%),
+      #image("img/neutral_wordcloud.png", width: 80%),
+      #image("img/positive_wordcloud.png", width: 80%),
+    ],
+  ),
+  caption: [Word clouds for the negative, neutral, and positive classes.]
 )
 
-== Feature Normalization
-After converting the *audio signals* into *mel-spectrogram* representations and flattening them into *1D feature vectors*, we applied *feature normalization* to ensure *numerical stability* and improve *model performance*.
-
-We used *z-score standardization*, which transforms each feature to have a *mean of 0* and a *standard deviation of 1*. This is particularly important for models that are *sensitive to feature magnitudes*, such as *support vector machines* and *neural networks*. Without normalization, features with *larger numerical ranges* could *dominate the learning process* or *slow convergence*.
-
-The *normalization parameters* (mean and standard deviation) were computed using the entire set of *normal training samples*. This is consistent with the *anomaly detection* framework, where it is assumed that only *normal examples* are available during training.
 
 
 = Models Evaluated
@@ -231,9 +244,9 @@ For both *VGGish* and *PANNs-based models*, we experimented with different *anom
 
 Although the *Convolutional VAE* performed well and achieved high *precision* and *F1-score* on the held-out test set, the *PANNs embedding method* achieved a *substantially higher ROC AUC* of *0.9311*. Given the *unsupervised nature* of the task and the emphasis on *ranking anomaly likelihood*, *ROC AUC* was prioritized as the primary evaluation metric.
 
-#figure(
+/* #figure(
   image("img/mahala.png", width: 90%),
-)
+) */
 
  Therefore, we selected the *PANNs + Mahalanobis* method as the *final model*, due to its superior *generalization*, *semantic awareness*, and *robustness to noise*. This approach is also *computationally efficient*, requiring no retraining and leveraging *powerful pretrained audio features*.
 
