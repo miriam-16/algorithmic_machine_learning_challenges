@@ -97,16 +97,17 @@ It follows the WordCloud visualization of the most frequent words in the trainin
 
 
 
+
 = Models Evaluated
 
-== Fully-Connected Autoencoder
+== GRU-Based Sentiment Classifier
 
-A *fully-connected Autoencoder* was used to learn *compressed representations* from *tabular input features*. Implemented in *PyTorch*, the model consists of a *dense encoder* that maps input vectors to a *latent space* of dimension *64*, followed by a *symmetric decoder* that reconstructs the original input.
+A *Gated Recurrent Unit (GRU)*-based model was developed using *TensorFlow/Keras* to classify *tweet sentiment* from *preprocessed text data*. Each input is first transformed into padded token sequences (`max_len = 50`) and passed through an *Embedding layer* (`output_dim=128`). The embedded sequences are then processed by a *GRU layer* with *64 units*, followed by a *Dropout layer* (`rate=0.5`) to mitigate overfitting. A final *Dense layer* with *softmax activation* predicts one of the *three sentiment classes*.
 
-The model is trained using *mean squared error (MSE)* as the reconstruction loss and optimized with the *Adam optimizer* over *30 epochs*. A *learning rate scheduler* is applied to adjust the learning rate dynamically and help prevent overfitting.
+The training process uses *sparse categorical crossentropy* as the loss function and the *Adam optimizer* with a *batch size of 32* for *10 epochs*. Model evaluation on the test set includes computing the *macro F1 score* and generating a *detailed classification report*. Labels are encoded using *LabelEncoder* to match the expected format for training.
 
 #figure(
-  caption: [Hyperparameter setup for Fully-Connected Autoencoder],
+  caption: [Hyperparameter setup for GRU-based Sentiment Classifier],
   table(
     columns: (auto, auto, auto),
     inset: 8pt,
@@ -117,22 +118,24 @@ The model is trained using *mean squared error (MSE)* as the reconstruction loss
       [Used],
     ),
 
-    [latent_dim], [64 (AE), 8 (VAE)], [64 / 8],
+    [embedding_dim], [128], [128],
+    [gru_units], [32, 64, 128], [64],
+    [dropout], [0.3–0.5], [0.5],
     [optimizer], [Adam], [Adam],
-    [lr], [1e-3], [1e-3],
-    [β], [0.001], [0.001],
+    [epochs], [10–30], [10],
+    [batch_size], [32, 64], [32],
   ),
-) <tab:autoencoder-params>
+) <tab:gru-params>
 
 
-== Convolutional Variational Autoencoder
+== RNN-Based Sentiment Classifier
 
-A *Convolutional Variational Autoencoder (ConvVAE)* was used to model the distribution of *normal Mel spectrograms* extracted from *16kHz audio recordings*. The architecture consists of a *convolutional encoder* that compresses the input into a *latent space* of dimension *8*, *16*, or *32*, and a *decoder* that reconstructs the input from this latent representation. Spectrograms are *standardized* and *zero-padded* to ensure compatibility with the convolutional layers.
+A *Recurrent Neural Network (RNN)*, specifically a *LSTM-based classifier*, was implemented using *TensorFlow/Keras* to perform *sentiment classification* on *preprocessed tweet data*. The architecture begins with a *tokenized and padded input sequence* (max length = *50*), embedded into a *dense vector space* via an *Embedding layer* (`output_dim=128`). This is followed by a *single LSTM layer* (`units=64`) and a *Dropout layer* (`rate=0.5`) to reduce overfitting. The final *Dense output layer* uses a *softmax activation* for multi-class classification across *three sentiment labels*.
 
-The model uses the *reparameterization trick* to allow backpropagation through stochastic sampling, and is trained with a *β-VAE loss*, which combines *MSE reconstruction loss* and *KL divergence*. A grid search over *latent dimensions* and *β values* was performed using *5-fold cross-validation* on normal samples to select the best configuration.
+The model is trained with *sparse categorical crossentropy* loss and optimized using the *Adam optimizer* over *10 epochs*. Performance is evaluated using *macro-averaged F1 score* and a detailed *classification report*, with results obtained on a held-out *test set*. Input labels are encoded numerically using *sklearn’s LabelEncoder* for compatibility with the loss function.
 
 #figure(
-  caption: [Hyperparameter setup for ConvVAE],
+  caption: [Hyperparameter setup for LSTM-based Sentiment Classifier],
   table(
     columns: (auto, auto, auto),
     inset: 8pt,
@@ -143,49 +146,96 @@ The model uses the *reparameterization trick* to allow backpropagation through s
       [Used],
     ),
 
-    [latent_dim], [8, 16, 32], [32],
-    [β], [0.01, 0.1, 1.0], [0.01],
-  ),
-) <tab:vae-hyperparams>
-
-
-== Variational Autoencoder
-
-A *Fully-Connected Variational Autoencoder (VAE)* was used to learn *compact latent representations* from tabular data. The model is implemented in *PyTorch* and features a *fully-connected encoder* that maps inputs to a *latent space* of dimension *8*, using separate layers to estimate the *mean* and *log-variance*.
-
-A *decoder* reconstructs the input from a latent variable obtained through the *reparameterization trick*. The loss function combines *mean squared error (MSE)* for reconstruction and *KL divergence* for regularization, forming a *β-VAE loss*. The model is trained with the *Adam optimizer*, and a *learning rate scheduler* is used to reduce learning rate when performance plateaus.
-
-#figure(
-  caption: [Hyperparameter setup for VAE],
-  table(
-    columns: (auto, auto, auto),
-    inset: 8pt,
-    align: (left, left, center),
-    table.header(
-      [Hyperparameter],
-      [Ranges / Values],
-      [Used],
-    ),
-
-    [latent_dim], [8, 16], [8],
+    [embedding_dim], [128], [128],
+    [lstm_units], [32, 64, 128], [64],
+    [dropout], [0.3–0.5], [0.5],
     [optimizer], [Adam], [Adam],
-    [lr], [1e-3], [1e-3],
-    [β], [0.001], [0.001],
+    [epochs], [10–30], [10],
+    [batch_size], [32, 64], [32],
   ),
-) <tab:vae-params>
+) <tab:rnn-params>
 
 
-== PANNs Pretrained Model
+== RNN with Self-Attention Sentiment Classifier
 
-The model *Cnn14* is a *pretrained convolutional neural network* from the *PANNs* (Pretrained Audio Neural Networks) family. It was trained on the *AudioSet* dataset and is designed for *general-purpose audio tagging*. The model takes *raw waveform input* and produces a fixed-size *2048-dimensional embedding* that captures *high-level acoustic features*.
+A *Recurrent Neural Network* enhanced with a *Self-Attention mechanism* was constructed using *TensorFlow/Keras* to classify *tweet sentiment*. Each input sentence is tokenized and padded (`max_len = 50`), then embedded via an *Embedding layer* (`output_dim=128`). This is followed by a *GRU layer* (`units=64`) whose output is fed into a *custom Self-Attention layer*. The attention mechanism computes *context-aware weighted representations* of the input sequence to improve the model’s focus on relevant tokens. The result is aggregated and passed to a *Dense softmax layer* for final classification into *three sentiment classes*.
 
-Implemented via the *panns_inference* library, the model is used in *inference mode only*, with no additional training or fine-tuning. Audio inputs are *converted to mono*, *resampled to 32kHz*, and passed to the model through the provided *AudioTagging* interface. The resulting embeddings can be used for downstream tasks without modifying the network, leveraging its *pretrained audio representations*.
+The model is trained using the *Adam optimizer* and *sparse categorical crossentropy* loss function for *10 epochs*, with *batch size 32*. Labels are numerically encoded using *LabelEncoder*. The classifier’s performance is assessed through a *macro-averaged F1 score* and a *classification report* on a held-out test set.
 
-== VGGish Pretrained Model
+#figure(
+  caption: [Hyperparameter setup for RNN with Self-Attention Sentiment Classifier],
+  table(
+    columns: (auto, auto, auto),
+    inset: 8pt,
+    align: (left, left, center),
+    table.header(
+      [Hyperparameter],
+      [Ranges / Values],
+      [Used],
+    ),
 
-*VGGish* is a *pretrained convolutional neural network* developed by *Google* and trained on a *large-scale YouTube audio dataset* for *audio classification tasks*. It transforms *raw audio waveforms* into *128-dimensional embeddings* that capture *semantic-level acoustic information*. The model operates on *log-mel spectrograms* computed from audio resampled to *16kHz*, and includes a *post-processing PCA step* for *dimensionality reduction* and *whitening*.
+    [embedding_dim], [128], [128],
+    [gru_units], [32, 64, 128], [64],
+    [attention], [Custom Layer], [✓],
+    [optimizer], [Adam], [Adam],
+    [epochs], [10–30], [10],
+    [batch_size], [32, 64], [32],
+  ),
+) <tab:attn-rnn-params>
 
-In our pipeline, *VGGish* is used strictly in *inference mode*, without additional *training* or *fine-tuning*. *Audio samples* are *preprocessed* to fit the model’s expected input format and passed through the network to obtain *fixed-size embeddings*. These embeddings are then used for *anomaly detection*, leveraging the *rich representational capacity* of the *pretrained model* to characterize *normal audio behavior*.
+
+== RoBERTa-Based Sentiment Classifier
+
+A *Transformer-based model*, specifically *RoBERTa fine-tuned for sentiment analysis*, was implemented using the *Hugging Face Transformers* library. The model used is `"cardiffnlp/twitter-roberta-base-sentiment"`, pre-trained on social media text. Input sentences are first *tokenized* using the corresponding *AutoTokenizer*, padded and truncated appropriately, and then passed to the *RoBERTa model* which outputs contextualized representations. A classification head maps these to *three sentiment classes*.
+
+The model is trained using the *Trainer API* with *weighted F1 score*, *accuracy*, *precision*, and *recall* as evaluation metrics. Data is managed using the *Hugging Face Datasets* library and split into *70% training*, *15% validation*, and *15% test* sets. Labels are encoded via *LabelEncoder* to match the model’s expected format.
+
+#figure(
+  caption: [Hyperparameter setup for RoBERTa Sentiment Classifier],
+  table(
+    columns: (auto, auto, auto),
+    inset: 8pt,
+    align: (left, left, center),
+    table.header(
+      [Hyperparameter],
+      [Ranges / Values],
+      [Used],
+    ),
+
+    [batch_size], [8, 16, 32], [default],
+    [epochs], [3–5], [default],
+    [max_length], [auto via tokenizer], [✓],
+  ),
+) <tab:roberta-params>
+
+
+== TF-IDF + Traditional Classifiers for Sentiment Analysis
+
+A *classic machine learning pipeline* was employed to classify *tweet sentiment* using a *TF-IDF vectorization* of preprocessed text. Input text is tokenized, cleaned, and then transformed into a *TF-IDF matrix* (`max_features=5000`) using *scikit-learn’s TfidfVectorizer*. The resulting sparse matrix represents word importance across documents and serves as input to various *supervised classifiers*.
+
+Multiple models were evaluated, including *Logistic Regression*, *Linear SVM (SVC)*, *Multinomial Naive Bayes*, and *Random Forests*. Each model is trained on *70% of the data*, validated on *15%*, and tested on the remaining *15%*. The primary metric for evaluation is the *macro-averaged F1 score*, complemented by *classification reports* and *confusion matrices*.
+
+#figure(
+  caption: [Hyperparameter setup for TF-IDF + Traditional Classifiers],
+  table(
+    columns: (auto, auto, auto),
+    inset: 8pt,
+    align: (left, left, center),
+    table.header(
+      [Component],
+      [Details],
+      [Used],
+    ),
+
+    [vectorizer], [TfidfVectorizer], [✓],
+    [max_features], [1000–10000], [5000],
+    [classifiers], [LogReg, SVM, RF, NB], [✓],
+    [split ratio], [70/15/15], [✓],
+    [loss / objective], [varies by model], [✓],
+    [evaluation], [F1-macro, ConfMatrix], [✓],
+  ),
+) <tab:tfidf-params>
+
 
 
 
