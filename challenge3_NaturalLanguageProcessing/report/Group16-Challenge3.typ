@@ -2,8 +2,9 @@
 
 #show: ieee.with(
   title: [Sentimental analysis - Challenge 3 AML],
-  abstract: [
-    This report focuses on sentence-level sentiment classification of tweets into positive, negative, or neutral categories. Various models were evaluated, including traditional classifiers with TF-IDF features and deep learning architectures such as GRU, LSTM, self-attention networks, and a pretrained RoBERTa model. After comprehensive preprocessing, RoBERTa achieved the highest performance (macro F1: 0.8110), demonstrating the advantages of contextual embeddings and transfer learning for social media text. The multiclass setup was retained based on balanced confusion patterns, and future directions include model fusion, prompt-based large language models, and data augmentation techniques.
+  abstract: [ //TODO: fix abstract if some models are removed
+    This report presents a comparative study on sentence-level sentiment analysis using a dataset of tweets labeled as positive, neutral, or negative. Various modeling approaches were explored, ranging from traditional machine learning pipelines using TF-IDF and Random Forests, to deep learning architectures including GRU, LSTM, and attention-based RNNs, as well as models leveraging pretrained embeddings such as GloVe. A RoBERTa-based transformer model fine-tuned on social media data achieved the highest performance, with a macro F1 score of 0.8110. The study highlights the importance of contextual representations and transfer learning in handling informal and noisy text. Further improvements are proposed through model ensembling, prompt-based inference, and contrastive learning strategies.
+
   ],
   authors: (
     (
@@ -35,7 +36,12 @@
       email: "enrico.sbuttoni@eurecom.fr",
     ),
   ),
-  index-terms: ("Machine Learning", "Sentimental Analysis", "Natural Language Process", "", ""), //TODO: add more index terms,
+  index-terms: (
+    "Machine Learning",
+    "Sentimental Analysis",
+    "Natural Language Process",
+    "Reccurent Neural Networks",
+  ), //TODO: add more index terms,
 )
 
 = Introduction
@@ -76,15 +82,15 @@ In order to prepare the dataset for training, we performed several preprocessing
 It follows the WordCloud visualization of the most frequent words in the training set, depending on the class they belongs to, which highlights the most common terms used in the tweets. This visualization can help identify key themes and topics present in the dataset.
 
 #let vimg(body) = {
-    rect(width: 10mm, height: 5mm)[
-        #text(body)
-    ]
+  rect(width: 10mm, height: 5mm)[
+    #text(body)
+  ]
 }
 
 #figure(
   grid(
     columns: (auto, auto, auto),
-    rows: (auto),
+    rows: auto,
     gutter: 1em,
     [
       #image("img/negative_wordcloud.png", width: 80%)
@@ -92,7 +98,7 @@ It follows the WordCloud visualization of the most frequent words in the trainin
       #image("img/positive_wordcloud.png", width: 80%)
     ],
   ),
-  caption: [Word clouds for the negative, neutral, and positive classes.]
+  caption: [Word clouds for the negative, neutral, and positive classes.],
 )
 
 
@@ -104,7 +110,7 @@ It follows the WordCloud visualization of the most frequent words in the trainin
 
 A *Gated Recurrent Unit (GRU)*-based model was developed using *TensorFlow/Keras* to classify *tweet sentiment* from *preprocessed text data*. Each input is first transformed into padded token sequences (`max_len = 50`) and passed through an *Embedding layer* (`output_dim=128`). The embedded sequences are then processed by a *GRU layer* with *64 units*, followed by a *Dropout layer* (`rate=0.5`) to mitigate overfitting. A final *Dense layer* with *softmax activation* predicts one of the *three sentiment classes*.
 
-The training process uses *sparse categorical crossentropy* as the loss function and the *Adam optimizer* with a *batch size of 32* for *10 epochs*. Model evaluation on the test set includes computing the *macro F1 score* and generating a *detailed classification report*. Labels are encoded using *LabelEncoder* to match the expected format for training.
+The training process uses *sparse categorical cross-entropy* as the loss function and the *Adam optimizer* with a *batch size of 32* for *10 epochs*. Model evaluation on the test set includes computing the *macro F1 score* and generating a *detailed classification report*. Labels are encoded using *LabelEncoder* to match the expected format for training.
 
 #figure(
   caption: [Hyperparameter setup for GRU-based Sentiment Classifier],
@@ -130,7 +136,7 @@ The training process uses *sparse categorical crossentropy* as the loss function
 
 A *Recurrent Neural Network (RNN)*, specifically a *LSTM-based classifier*, was implemented using *TensorFlow/Keras* to perform *sentiment classification* on *preprocessed tweet data*. The architecture begins with a *tokenized and padded input sequence* (max length = *50*), embedded into a *dense vector space* via an *Embedding layer* (`output_dim=128`). This is followed by a *single LSTM layer* (`units=64`) and a *Dropout layer* (`rate=0.5`) to reduce overfitting. The final *Dense output layer* uses a *softmax activation* for multi-class classification across *three sentiment labels*.
 
-The model is trained with *sparse categorical crossentropy* loss and optimized using the *Adam optimizer* over *10 epochs*. Performance is evaluated using *macro-averaged F1 score* and a detailed *classification report*, with results obtained on a held-out *test set*. Input labels are encoded numerically using *sklearn’s LabelEncoder* for compatibility with the loss function.
+The model is trained with *sparse categorical cross-entropy* loss and optimized using the *Adam optimizer* over *10 epochs*. Performance is evaluated using *macro-averaged F1 score* and a detailed *classification report*, with results obtained on a held-out *test set*. Input labels are encoded numerically using *sklearn’s LabelEncoder* for compatibility with the loss function.
 
 #figure(
   caption: [Hyperparameter setup for LSTM-based Sentiment Classifier],
@@ -358,18 +364,12 @@ However, after analyzing the *confusion matrix* from multiple models—including
 
 #figure(
   image("img/berta.png", width: 70%),
-  caption: [Confusion matrix of RoBERTa classifier on the test set. Class predictions are balanced, with neutral showing no dominant error pattern.]
+  caption: [Confusion matrix of RoBERTa classifier on the test set. Class predictions are balanced, with neutral showing no dominant error pattern.],
 )
 
 Based on these findings, we decided to retain the full *multiclass setup* (positive / neutral / negative), as the model was already able to handle the three-way distinction without introducing bias or instability. Additionally, maintaining the full label set aligns better with the downstream use case of nuanced sentiment understanding in social media analytics.
 
-= Conclusion and Next Steps
-
-In this challenge, we compared three unsupervised approaches for *anomalous sound detection* on the *slider machine* using audio recordings from the MIMII dataset. Our analysis revealed that while *fully-connected VAEs* were limited by their inability to capture spectro-temporal patterns, *Convolutional VAEs* significantly improved anomaly detection by leveraging local structure in Mel spectrograms.
-
-However, the best results were obtained by the *PANNs-based model* with *Mahalanobis distance*, which achieved a *ROC AUC of 0.9311* without requiring retraining. This underscores the value of *pretrained semantic audio representations* for generalization in real-world noisy environments.
-
-As future work, we propose exploring *semi-supervised training* using pseudo-labeling strategies, experimenting with *attention-based models* applying *temporal models* (e.g., LSTMs or Transformers) to capture longer-term dependencies in machine sounds, and evaluating the use of *domain adaptation techniques* to improve robustness across different machine types or noise conditions.
+//TODO: add a conclusion?
 
 
 = References
