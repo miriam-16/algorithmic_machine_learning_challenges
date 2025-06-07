@@ -330,28 +330,49 @@ Given the *supervised nature* of the task and the importance of capturing *conte
 
 Therefore, we selected the *RoBERTa (pretrained)* model as the *final architecture*, due to its superior *generalization ability*, *contextual understanding*, and consistent performance across all sentiment categories. This model leverages *state-of-the-art transformer representations* and benefits from *pretraining on large-scale social media data*, requiring minimal task-specific tuning while delivering *high-quality sentiment predictions*.
 
+= Inference and Future Work
 
-= Inference on Unlabeled Test Set
+== Inference on Unlabeled Evaluation Set
 
-We applied both the *Conv-VAE* and the *PANNs + Mahalanobis* pipeline to the *unlabeled evaluation set* provided. The goal was to rank test samples by *anomaly score* and identify the most suspicious examples.
+For the final submission, we deployed our best-performing model—*RoBERTa fine-tuned for Twitter sentiment analysis*—on the unlabeled test set. Each input tweet was tokenized, encoded, and processed by the model to produce a sentiment prediction (*positive*, *neutral*, or *negative*).
 
-== Conv-VAE
 
-The *Convolutional Variational Autoencoder* computes an *anomaly score* based on the *reconstruction error* between the input spectrogram and its reconstruction. A manually selected threshold (derived from the validation ROC curve) is applied to label samples as normal or anomalous.
+Due to the model’s strong performance on the validation and test sets (macro F1 = 0.8110), we expect it to generalize well, especially thanks to its pretraining on large-scale Twitter data.
 
-While the model can flag anomalous instances, it suffers from:
-- *sensitivity to audio distortions*,
-- potential overfitting to training noise patterns,
-- and *limited generalization* to unseen anomalies.
+== Possible Improvements and Creative Extensions
 
-This makes its inference results less reliable compared to embedding-based methods.
+While the RoBERTa-based classifier proved most effective, several potential enhancements and experimental directions can be explored to further improve performance or generalization:
 
-== PANNs + Mahalanobis
+- *Mixture of Experts (MoE)*: Combine predictions from different classifiers (e.g., RoBERTa, GRU+Attention, TF-IDF+SVM) via a learned gating network or rule-based selector that chooses the most appropriate model per tweet based on features like length, sentiment polarity, or linguistic complexity.
 
-The *PANNs model* provides *pretrained 2048-dimensional embeddings* for each audio file. By modeling the distribution of normal embeddings and computing the *Mahalanobis distance*, we obtain robust anomaly scores without retraining. This method:
-- generalizes well across machine conditions,
-- is *insensitive to minor signal variations*,
-- and produces *well-calibrated anomaly rankings*.
+- *Prompt-based Inference with LLMs*: Use instruction-tuned large language models (e.g., Flan-T5, Mixtral, GPT-4) with prompts such as:
+  > "The sentiment of the following tweet is [MASK]: 'Why is everything closed today?'"
+  This allows zero- or few-shot classification and could adapt better to ambiguous or nuanced expressions.
+
+- *Contrastive Learning for Sentiment Embeddings*: Fine-tune the sentence embeddings using a contrastive objective on pairs of tweets with similar/dissimilar sentiments to enhance representation learning for downstream classification.
+
+- *Data Augmentation with Back-Translation and Synonym Replacement*: Enrich training data via automatic paraphrasing using back-translation (EN → FR → EN) and lexical substitution, which increases diversity and robustness.
+
+- *Temporal Sentiment Tracking*: If tweet metadata is available, model sentiment trends over time (e.g., for recurring users or events) with temporal models like Transformer-based sequence encoders or hierarchical LSTMs.
+
+
+
+= On Binary Simplification of the Classification Task
+
+During the early phases of model development, we considered simplifying the problem from a *three-class sentiment classification* to a *binary task*, distinguishing only between *polar* (positive or negative) and *neutral* sentiment. The rationale was to potentially reduce class confusion and improve precision on polar classes, which are often the target in sentiment-aware applications (e.g., customer feedback analysis).
+
+However, after analyzing the *confusion matrix* from multiple models—including the GRU, LSTM, and RoBERTa classifiers—we observed the following:
+
+- The classifier did *not show any dominant bias* toward a particular class; predictions were distributed in a relatively balanced manner across the three sentiment categories.
+- The *neutral class*, in particular, exhibited *almost symmetrical counts of false positives and false negatives*, indicating that the classifier’s performance on neutral samples was neither overly conservative nor excessively lenient.
+- Misclassifications tended to occur at the *semantic boundaries* between classes (e.g., between slightly negative and neutral), rather than being concentrated in one direction.
+
+#figure(
+  image("img/berta.png", width: 70%),
+  caption: [Confusion matrix of RoBERTa classifier on the test set. Class predictions are balanced, with neutral showing no dominant error pattern.]
+)
+
+Based on these findings, we decided to retain the full *multiclass setup* (positive / neutral / negative), as the model was already able to handle the three-way distinction without introducing bias or instability. Additionally, maintaining the full label set aligns better with the downstream use case of nuanced sentiment understanding in social media analytics.
 
 = Conclusion and Next Steps
 
