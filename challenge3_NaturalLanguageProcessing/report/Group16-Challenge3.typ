@@ -3,7 +3,7 @@
 #show: ieee.with(
   title: [Sentimental analysis - Challenge 3 AML],
   abstract: [
-    - Sentence-level Sentiment Analysis evaluate sentiment from a single sentence.
+    This report focuses on sentence-level sentiment classification of tweets into positive, negative, or neutral categories. Various models were evaluated, including traditional classifiers with TF-IDF features and deep learning architectures such as GRU, LSTM, self-attention networks, and a pretrained RoBERTa model. After comprehensive preprocessing, RoBERTa achieved the highest performance (macro F1: 0.8110), demonstrating the advantages of contextual embeddings and transfer learning for social media text. The multiclass setup was retained based on balanced confusion patterns, and future directions include model fusion, prompt-based large language models, and data augmentation techniques.
   ],
   authors: (
     (
@@ -87,9 +87,9 @@ It follows the WordCloud visualization of the most frequent words in the trainin
     rows: (auto),
     gutter: 1em,
     [
-      #image("img/negative_wordcloud.png", width: 80%),
-      #image("img/neutral_wordcloud.png", width: 80%),
-      #image("img/positive_wordcloud.png", width: 80%),
+      #image("img/negative_wordcloud.png", width: 80%)
+      #image("img/neutral_wordcloud.png", width: 80%)
+      #image("img/positive_wordcloud.png", width: 80%)
     ],
   ),
   caption: [Word clouds for the negative, neutral, and positive classes.]
@@ -118,10 +118,8 @@ The training process uses *sparse categorical crossentropy* as the loss function
       [Used],
     ),
 
-    [embedding_dim], [128], [128],
     [gru_units], [32, 64, 128], [64],
     [dropout], [0.3–0.5], [0.5],
-    [optimizer], [Adam], [Adam],
     [epochs], [10–30], [10],
     [batch_size], [32, 64], [32],
   ),
@@ -146,10 +144,8 @@ The model is trained with *sparse categorical crossentropy* loss and optimized u
       [Used],
     ),
 
-    [embedding_dim], [128], [128],
     [lstm_units], [32, 64, 128], [64],
     [dropout], [0.3–0.5], [0.5],
-    [optimizer], [Adam], [Adam],
     [epochs], [10–30], [10],
     [batch_size], [32, 64], [32],
   ),
@@ -174,10 +170,7 @@ The model is trained using the *Adam optimizer* and *sparse categorical crossent
       [Used],
     ),
 
-    [embedding_dim], [128], [128],
     [gru_units], [32, 64, 128], [64],
-    [attention], [Custom Layer], [✓],
-    [optimizer], [Adam], [Adam],
     [epochs], [10–30], [10],
     [batch_size], [32, 64], [32],
   ),
@@ -197,12 +190,11 @@ Multiple models were evaluated, including *Logistic Regression*, *Linear SVM (SV
     inset: 8pt,
     align: (left, left, center),
     table.header(
-      [Component],
-      [Details],
+      [Hyperparameter],
+      [Ranges / Values],
       [Used],
     ),
 
-    [vectorizer], [TfidfVectorizer], [✓],
     [max_features], [1000–10000], [5000],
     [classifiers], [LogReg, SVM, RF, NB], [RF],
   ),
@@ -227,11 +219,9 @@ The model was trained using *sparse categorical crossentropy* and the *Adam opti
       [Used],
     ),
 
-    [embedding_type], [GloVe 6B 100d], [✓],
     [embedding_dim], [50, 100, 200], [100],
     [lstm_units], [32, 64, 128], [64],
     [dropout], [0.3–0.5], [0.5],
-    [optimizer], [Adam], [Adam],
     [batch_size], [32, 64], [64],
     [epochs], [5-20], [5],
   ),
@@ -258,7 +248,6 @@ The model is trained using the *Trainer API* with *weighted F1 score*, *accuracy
 
     [batch_size], [8, 16, 32], [default],
     [epochs], [3–5], [default],
-    [max_length], [auto via tokenizer], [✓],
   ),
 ) <tab:roberta-params>
 
