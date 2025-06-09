@@ -2,7 +2,8 @@
 
 #show: ieee.with(
   title: [Sentimental analysis - Challenge 3 AML],
-  abstract: [ //TODO: fix abstract if some models are removed
+  abstract: [
+    //TODO: fix abstract if some models are removed
     This report presents a comparative study on sentence-level sentiment analysis using a dataset of tweets labeled as positive, neutral, or negative. Various modeling approaches were explored, ranging from traditional machine learning pipelines using TF-IDF and Random Forests, to deep learning architectures including GRU, LSTM, and attention-based RNNs, as well as models leveraging pretrained embeddings such as GloVe. A RoBERTa-based transformer model fine-tuned on social media data achieved the highest performance, with a macro F1 score of 0.8110. The study highlights the importance of contextual representations and transfer learning in handling informal and noisy text. Further improvements are proposed through model ensembling, prompt-based inference, and contrastive learning strategies.
 
   ],
@@ -78,27 +79,20 @@ In order to prepare the dataset for training, we performed several preprocessing
 - *lowercase*: all text was converted to lowercase to ensure uniformity and avoid case sensitivity issues;
 - *removing stop words*: common words that do not contribute to the sentiment analysis were removed to reduce noise and improve model performance. Words of negation such as "not" and "no" were kept, as they can significantly impact the sentiment of a sentence;
 - *tokenization*: the text was tokenized into individual words to facilitate further processing and analysis.
+\
+Figure 1 shows the WordCloud visualization of the most frequent words in the training set, depending on the class they belongs to, which highlights the most common terms used in the tweets. This visualization can help identify key themes and topics present in the dataset.
 
-It follows the WordCloud visualization of the most frequent words in the training set, depending on the class they belongs to, which highlights the most common terms used in the tweets. This visualization can help identify key themes and topics present in the dataset.
-
-#let vimg(body) = {
-  rect(width: 10mm, height: 5mm)[
-    #text(body)
-  ]
-}
-
-#figure(
-  grid(
-    columns: (auto, auto, auto),
-    rows: auto,
-    gutter: 1em,
-    [
-      #image("img/negative_wordcloud.png", width: 80%)
-      #image("img/neutral_wordcloud.png", width: 80%)
-      #image("img/positive_wordcloud.png", width: 80%)
+#place(
+  top,
+  scope: "parent",
+  float: true,
+  dx: 10mm,
+  figure(
+    image("img/combined_wordclouds_row.png"),
+    caption: [
+      WordClouds of the most frequent words in the training set
     ],
   ),
-  caption: [Word clouds for the negative, neutral, and positive classes.],
 )
 
 
@@ -266,24 +260,6 @@ To evaluate model performance in ranking anomalies, we primarily used the *ROC A
 
 While additional classification metrics such as *F1-score*, *precision*, and *recall* were reported after threshold selection, they were not used for *model selection* or hyperparameter tuning.
 
-
-= Bonus Track
-
-== Jaccard Score Evaluation
-
-To further assess the model’s performance in the multiclass sentiment classification task (*negative*, *neutral*, *positive*), we computed the *macro-averaged Jaccard score*, which measures the overlap between predicted and true label sets. Unlike accuracy, it penalizes both false positives and false negatives, making it a stricter evaluation metric.
-
-This metric was computed on the *best-performing model*, which in our experiments was *BERTa*, a fine-tuned transformer architecture specifically adapted for sentiment analysis.
-
-The result obtained was:
-
-📈 Jaccard Score (macro): *0.6869*
-
-This score indicates that, on average, the model correctly predicts around *69%* of the distinct elements across predicted and true label sets, demonstrating solid performance across all sentiment classes.
-
-For comparison, the *macro F1-score* achieved by BERTa was *0.81*, which reflects a higher tolerance to partial misclassifications. The slightly lower Jaccard score is expected, as it applies a more conservative evaluation. Together, these metrics confirm the robustness and general reliability of the model.
-
-
 = Results Summary
 
 == Detailed Results – GRU Classifier
@@ -330,8 +306,6 @@ All models were evaluated using the *macro-averaged F1 score* to fairly represen
 ) <tab:final-results>
 
 
-
-
 = Model Selected
 
 Although both the *TF-IDF + Random Forest*, *RNN + Self-Attention* and *GloVe + LSTM* models performed reasonably well—achieving *macro F1 scores* of *0.7125* and *0.6924* respectively—the *RoBERTa-based classifier* clearly outperformed all alternatives, reaching a *macro F1 score of 0.8110* and an *overall accuracy of 81%* on the test set.
@@ -340,32 +314,11 @@ Given the *supervised nature* of the task and the importance of capturing *conte
 
 Therefore, we selected the *RoBERTa (pretrained)* model as the *final architecture*, due to its superior *generalization ability*, *contextual understanding*, and consistent performance across all sentiment categories. This model leverages *state-of-the-art transformer representations* and benefits from *pretraining on large-scale social media data*, requiring minimal task-specific tuning while delivering *high-quality sentiment predictions*.
 
-= Inference and Future Work
-
-== Inference on Unlabeled Evaluation Set
-
+= Inference on unlabeled evaluation set
 For the final submission, we deployed our best-performing model—*RoBERTa fine-tuned for Twitter sentiment analysis*—on the unlabeled test set. Each input tweet was tokenized, encoded, and processed by the model to produce a sentiment prediction (*positive*, *neutral*, or *negative*).
 
 
 Due to the model’s strong performance on the validation and test sets (macro F1 = 0.8110), we expect it to generalize well, especially thanks to its pretraining on large-scale Twitter data.
-
-== Possible Improvements and Creative Extensions
-
-While the RoBERTa-based classifier proved most effective, several potential enhancements and experimental directions can be explored to further improve performance or generalization:
-
-- *Mixture of Experts (MoE)*: Combine predictions from different classifiers (e.g., RoBERTa, GRU+Attention, TF-IDF+SVM) via a learned gating network or rule-based selector that chooses the most appropriate model per tweet based on features like length, sentiment polarity, or linguistic complexity.
-
-- *Prompt-based Inference with LLMs*: Use instruction-tuned large language models (e.g., Flan-T5, Mixtral, GPT-4) with prompts such as:
-  > "The sentiment of the following tweet is [MASK]: 'Why is everything closed today?'"
-  This allows zero- or few-shot classification and could adapt better to ambiguous or nuanced expressions.
-
-- *Contrastive Learning for Sentiment Embeddings*: Fine-tune the sentence embeddings using a contrastive objective on pairs of tweets with similar/dissimilar sentiments to enhance representation learning for downstream classification.
-
-- *Data Augmentation with Back-Translation and Synonym Replacement*: Enrich training data via automatic paraphrasing using back-translation (EN → FR → EN) and lexical substitution, which increases diversity and robustness.
-
-- *Temporal Sentiment Tracking*: If tweet metadata is available, model sentiment trends over time (e.g., for recurring users or events) with temporal models like Transformer-based sequence encoders or hierarchical LSTMs.
-
-
 
 = On Binary Simplification of the Classification Task
 
@@ -377,14 +330,36 @@ However, after analyzing the *confusion matrix* from multiple models—including
 - The *neutral class*, in particular, exhibited *almost symmetrical counts of false positives and false negatives*, indicating that the classifier’s performance on neutral samples was neither overly conservative nor excessively lenient.
 - Misclassifications tended to occur at the *semantic boundaries* between classes (e.g., between slightly negative and neutral), rather than being concentrated in one direction.
 
+As shown in Figure 3, the confusion matrix supports these observations, illustrating that class predictions are generally well balanced.
+
 #figure(
   image("img/berta.png", width: 70%),
-  caption: [Confusion matrix of RoBERTa classifier on the test set. Class predictions are balanced, with neutral showing no dominant error pattern.],
+  caption: [
+    Confusion matrix of RoBERTa classifier on the test set. Class predictions are balanced, with neutral showing no dominant error pattern.
+  ],
 )
 
 Based on these findings, we decided to retain the full *multiclass setup* (positive / neutral / negative), as the model was already able to handle the three-way distinction without introducing bias or instability. Additionally, maintaining the full label set aligns better with the downstream use case of nuanced sentiment understanding in social media analytics.
 
-//TODO: add a conclusion?
+= Bonus Track: Jaccard Score Evaluation
+
+To further assess the model’s performance in the multiclass sentiment classification task (*negative*, *neutral*, *positive*), we computed the *macro-averaged Jaccard score*, which measures the overlap between predicted and true label sets. Unlike accuracy, it penalizes both false positives and false negatives, making it a stricter evaluation metric.
+
+This metric was computed on the *best-performing model BERTa*, resulitng in a Jaccard score of *0.6869*.
+This score indicates that, on average, the model correctly predicts around *69%* of the distinct elements across predicted and true label sets, demonstrating solid performance across all sentiment classes.
+
+For comparison, the *macro F1-score* achieved by BERTa was *0.81*, which reflects a higher tolerance to partial misclassifications. The slightly lower Jaccard score is expected, as it applies a more conservative evaluation. Together, these metrics confirm the robustness and general reliability of the model.
+
+
+= Conclusion and Next Steps
+
+This work presents an end-to-end sentiment classification pipeline leveraging modern transformer-based models, culminating in high-performing predictions on the unseen test set. While the RoBERTa-based classifier demonstrated strong results, several directions remain open for *further improvement* and *creative exploration*.
+
+First, ensemble techniques such as a Mixture of Experts (MoE) could *combine outputs from diverse models* (e.g., RoBERTa, GRU with Attention, and TF-IDF with SVM) using a gating mechanism or heuristics tailored to tweet-specific properties like length or complexity. Second, *prompt-based inference* with instruction-tuned large language models (e.g., Flan-T5, GPT-4) could enable zero- or few-shot classification by leveraging natural language prompts to capture nuanced sentiment.
+
+Additional improvements may come from contrastive learning, which can refine sentence embeddings by *bringing similar sentiments closer* in embedding space. Data augmentation strategies—such as back-translation and synonym replacement—offer ways to *increase training diversity* and robustness. Finally, with access to temporal metadata, *modeling sentiment dynamics over time* using sequence encoders could open up deeper insights, especially in tracking evolving opinions or recurring users.
+
+These directions point toward more adaptable, resilient, and semantically aware sentiment analysis models.
 
 
 = References
