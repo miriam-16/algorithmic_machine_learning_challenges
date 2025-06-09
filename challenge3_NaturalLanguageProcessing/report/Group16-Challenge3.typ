@@ -364,9 +364,9 @@ These directions point toward more adaptable, resilient, and semantically aware 
 
 = References
 
-This report is inspired by the DCASE challenge and its application to real-world industrial environments, as described in:
-
-DCASE Challenge Task 2 (2020), *Unsupervised Anomalous Sound Detection for Machine Condition Monitoring*.
-The MIMII Dataset: Koizumi et al., *MIMII Dataset: Sound Dataset for Malfunctioning Industrial Machine Investigation*, 2019.
-The ToyADMOS Dataset: Purohit et al., *ToyADMOS: A Dataset of Miniature-Machine Operating Sounds for Anomalous Sound Detection*, 2019.
-
+This report builds upon established work in sentiment analysis, recurrent neural networks, and transformer-based architectures for natural language understanding, including:
+- Go, Alec et al., *Twitter Sentiment Classification using Distant Supervision*, Stanford University, 2009.
+- Vaswani et al., *Attention Is All You Need*, Advances in Neural Information Processing Systems (NeurIPS), 2017.
+- Devlin et al., *BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding*, arXiv preprint arXiv:1810.04805, 2018.
+- Pennington et al., *GloVe: Global Vectors for Word Representation*, EMNLP, 2014.
+- Wolf et al., *Transformers: State-of-the-Art Natural Language Processing*, Proceedings of the 2020 Conference on EMNLP: System Demonstrations, 2020.
