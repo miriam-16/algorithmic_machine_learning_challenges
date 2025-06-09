@@ -267,6 +267,21 @@ To evaluate model performance in ranking anomalies, we primarily used the *ROC A
 While additional classification metrics such as *F1-score*, *precision*, and *recall* were reported after threshold selection, they were not used for *model selection* or hyperparameter tuning.
 
 
+= Bonus Track
+
+== Jaccard Score Evaluation
+
+To further assess the model’s performance in the multiclass sentiment classification task (*negative*, *neutral*, *positive*), we computed the *macro-averaged Jaccard score*, which measures the overlap between predicted and true label sets. Unlike accuracy, it penalizes both false positives and false negatives, making it a stricter evaluation metric.
+
+This metric was computed on the *best-performing model*, which in our experiments was *BERTa*, a fine-tuned transformer architecture specifically adapted for sentiment analysis.
+
+The result obtained was:
+
+📈 Jaccard Score (macro): *0.6869*
+
+This score indicates that, on average, the model correctly predicts around *69%* of the distinct elements across predicted and true label sets, demonstrating solid performance across all sentiment classes.
+
+For comparison, the *macro F1-score* achieved by BERTa was *0.81*, which reflects a higher tolerance to partial misclassifications. The slightly lower Jaccard score is expected, as it applies a more conservative evaluation. Together, these metrics confirm the robustness and general reliability of the model.
 
 
 = Results Summary
